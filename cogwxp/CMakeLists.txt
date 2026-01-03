@@ -90,6 +90,10 @@ add_subdirectory(cogw7os)
 message(STATUS "Configuring Integration layer...")
 add_subdirectory(integration)
 
+# 6. Orchestration Layer (AGI toolchain orchestration)
+message(STATUS "Configuring Orchestration layer...")
+add_subdirectory(orchestration)
+
 # ===========================================================================
 # Installation
 # ===========================================================================
