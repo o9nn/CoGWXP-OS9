@@ -1,0 +1,70 @@
+@PACKAGE_INIT@
+
+# CoGWXP-OS9 CMake Configuration File
+#
+# This file is used by find_package(cogwxp-os9) to locate the CoGWXP-OS9
+# installation and set up the necessary variables and targets.
+
+include(CMakeFindDependencyMacro)
+
+# Required dependencies
+find_dependency(Threads)
+
+# Optional dependencies
+if(@ENABLE_SSL@)
+    find_dependency(OpenSSL)
+endif()
+
+# Include the targets file
+include("${CMAKE_CURRENT_LIST_DIR}/cogwxp-opencog-targets.cmake")
+
+if(@ENABLE_9P_INTEGRATION@)
+    include("${CMAKE_CURRENT_LIST_DIR}/cogwxp-plan9-targets.cmake")
+endif()
+
+if(@ENABLE_DIS_INTEGRATION@)
+    include("${CMAKE_CURRENT_LIST_DIR}/cogwxp-inferno-targets.cmake")
+endif()
+
+include("${CMAKE_CURRENT_LIST_DIR}/cogwxp-cogw7os-targets.cmake")
+include("${CMAKE_CURRENT_LIST_DIR}/cogwxp-integration-targets.cmake")
+
+# Set variables
+set(COGWXP_OS9_FOUND TRUE)
+set(COGWXP_OS9_VERSION "@PROJECT_VERSION@")
+set(COGWXP_OS9_INCLUDE_DIRS "@PACKAGE_CMAKE_INSTALL_INCLUDEDIR@")
+set(COGWXP_OS9_LIBRARY_DIRS "@PACKAGE_CMAKE_INSTALL_LIBDIR@")
+
+# Feature flags
+set(COGWXP_OS9_9P_ENABLED @ENABLE_9P_INTEGRATION@)
+set(COGWXP_OS9_DIS_ENABLED @ENABLE_DIS_INTEGRATION@)
+set(COGWXP_OS9_NT_ENABLED @ENABLE_NT_INTEGRATION@)
+
+# Libraries
+set(COGWXP_OS9_LIBRARIES
+    cogwxp::cogwxp_os
+    cogwxp::unified_bridge
+    cogwxp::cogw7os
+    cogwxp::cogserver
+    cogwxp::pln
+    cogwxp::atomspace
+    cogwxp::cogutil
+)
+
+if(@ENABLE_9P_INTEGRATION@)
+    list(APPEND COGWXP_OS9_LIBRARIES
+        cogwxp::p9
+        cogwxp::atomspace_9p
+    )
+endif()
+
+if(@ENABLE_DIS_INTEGRATION@)
+    list(APPEND COGWXP_OS9_LIBRARIES
+        cogwxp::dis
+        cogwxp::limbo_rt
+        cogwxp::styx
+        cogwxp::atomspace_dis
+    )
+endif()
+
+check_required_components(cogwxp-os9)

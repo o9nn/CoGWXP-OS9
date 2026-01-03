@@ -1,0 +1,15 @@
+prefix=@CMAKE_INSTALL_PREFIX@
+exec_prefix=${prefix}
+libdir=${prefix}/@CMAKE_INSTALL_LIBDIR@
+includedir=${prefix}/@CMAKE_INSTALL_INCLUDEDIR@
+
+Name: cogwxp-os9
+Description: @PROJECT_DESCRIPTION@
+Version: @PROJECT_VERSION@
+URL: https://github.com/o9nn/CoGWXP-OS9
+
+Requires:
+Requires.private: 
+Libs: -L${libdir} -lcogwxp_os -lunified_bridge -lcogw7os -lcogserver -lpln -latomspace -lcogutil
+Libs.private: -lpthread
+Cflags: -I${includedir}
