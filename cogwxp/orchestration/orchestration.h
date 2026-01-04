@@ -51,6 +51,10 @@
 #include "toolchains/toolchains.h"
 #endif
 
+/* Advanced cognitive systems */
+#include "../integration/niche_construction.h"
+#include "../integration/beast_mode.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
