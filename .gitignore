@@ -1,0 +1,45 @@
+# Build artifacts
+*.o
+*.a
+*.so
+*.so.*
+*.dll
+*.dylib
+
+# Executables
+test_niche_beast
+test_cogwxp
+cogwxp-tests
+cogwxp-osd
+cogwxp
+
+# CMake
+CMakeFiles/
+CMakeCache.txt
+cmake_install.cmake
+Makefile
+*.cmake
+!CMakeLists.txt
+
+# Build directories
+build/
+bin/
+lib/
+obj/
+out/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Test outputs
+*.log
+*.tmp
+
+# Dependencies
+node_modules/
+vendor/
