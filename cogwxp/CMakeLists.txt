@@ -94,6 +94,12 @@ add_subdirectory(integration)
 message(STATUS "Configuring Orchestration layer...")
 add_subdirectory(orchestration)
 
+# 7. Test Suite
+if(BUILD_TESTS)
+    message(STATUS "Configuring Test suite...")
+    add_subdirectory(tests)
+endif()
+
 # ===========================================================================
 # Installation
 # ===========================================================================
