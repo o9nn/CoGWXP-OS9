@@ -1,0 +1,274 @@
+(*=============================================================================
+ * CoGWXP-OS9 Data Model - Z++ Formal Specification
+ * 
+ * This specification formalizes the data layer of CoGWXP-OS9, focusing on
+ * the AtomSpace hypergraph knowledge representation system.
+ *
+ * Based on: cogwxp/opencog/atomspace/atomspace.h
+ *============================================================================*)
+
+(* Base Types *)
+ℕ ::= Natural numbers (0, 1, 2, ...)
+ℤ ::= Integers (..., -1, 0, 1, ...)
+ℝ ::= Real numbers
+𝔹 ::= Boolean {true, false}
+String ::= Sequence of characters
+
+(* Type Definitions *)
+AtomHandle ::= ℕ
+  (* Unique 64-bit identifier for atoms *)
+  
+ATOM_HANDLE_INVALID == 0
+  (* Reserved invalid handle *)
+
+(*=============================================================================
+ * Atom Types
+ *============================================================================*)
+
+AtomType ::= CONCEPT_NODE | PREDICATE_NODE | SCHEMA_NODE | 
+             GROUNDED_SCHEMA_NODE | VARIABLE_NODE | NUMBER_NODE |
+             TYPE_NODE | LIST_LINK | SET_LINK | AND_LINK | OR_LINK |
+             NOT_LINK | IMPLICATION_LINK | EQUIVALENCE_LINK |
+             INHERITANCE_LINK | SIMILARITY_LINK | MEMBER_LINK |
+             SUBSET_LINK | EVALUATION_LINK | EXECUTION_LINK |
+             EXECUTION_OUTPUT_LINK | ATTENTION_LINK | HEBBIAN_LINK |
+             ASYMMETRIC_HEBBIAN_LINK | P9_RESOURCE_NODE | DIS_MODULE_NODE |
+             LIMBO_PROC_NODE | STYX_CHANNEL_LINK | KERNEL_PROCESS_NODE |
+             KERNEL_THREAD_NODE | KERNEL_MEMORY_NODE | KERNEL_IPC_LINK
+
+schema AtomTypeProperties
+  type: AtomType
+  is_node: 𝔹
+  is_link: 𝔹
+where
+  is_node ⇔ type ∈ {CONCEPT_NODE, PREDICATE_NODE, SCHEMA_NODE, 
+                     GROUNDED_SCHEMA_NODE, VARIABLE_NODE, NUMBER_NODE,
+                     TYPE_NODE, P9_RESOURCE_NODE, DIS_MODULE_NODE,
+                     LIMBO_PROC_NODE, KERNEL_PROCESS_NODE, KERNEL_THREAD_NODE,
+                     KERNEL_MEMORY_NODE}
+  is_link ⇔ ¬is_node
+  (* Every atom is either a node or a link, but not both *)
+
+(*=============================================================================
+ * Truth Values
+ *============================================================================*)
+
+TruthValueType ::= SIMPLE | COUNT | INDEFINITE | FUZZY | PROBABILISTIC
+
+schema TruthValue
+  tv_type: TruthValueType
+  strength: ℝ
+  confidence: ℝ
+  count: ℝ
+where
+  0 ≤ strength ≤ 1
+  0 ≤ confidence ≤ 1
+  count ≥ 0
+  (* Strength represents the degree of truth *)
+  (* Confidence represents certainty in the strength value *)
+  (* Count represents evidence count for COUNT type *)
+
+(* Default truth values *)
+TRUTH_VALUE_DEFAULT == TruthValue(SIMPLE, 1.0, 0.0, 0.0)
+TRUTH_VALUE_TRUE == TruthValue(SIMPLE, 1.0, 1.0, 1.0)
+TRUTH_VALUE_FALSE == TruthValue(SIMPLE, 0.0, 1.0, 1.0)
+TRUTH_VALUE_UNKNOWN == TruthValue(SIMPLE, 0.5, 0.0, 0.0)
+
+(*=============================================================================
+ * Attention Values
+ *============================================================================*)
+
+schema AttentionValue
+  sti: ℤ  (* Short-Term Importance *)
+  lti: ℤ  (* Long-Term Importance *)
+  vlti: ℤ (* Very Long-Term Importance - boolean flag *)
+where
+  -32768 ≤ sti ≤ 32767
+  -32768 ≤ lti ≤ 32767
+  vlti ∈ {0, 1}
+  (* STI drives attention allocation for immediate processing *)
+  (* LTI represents learned long-term importance *)
+  (* VLTI marks atoms that should never be forgotten *)
+
+ATTENTION_VALUE_DEFAULT == AttentionValue(0, 0, 0)
+
+(*=============================================================================
+ * Atoms - Core Data Structure
+ *============================================================================*)
+
+schema Node
+  handle: AtomHandle
+  type: AtomType
+  name: String
+  truth_value: TruthValue
+  attention_value: AttentionValue
+where
+  handle ≠ ATOM_HANDLE_INVALID
+  AtomTypeProperties(type).is_node = true
+  name ≠ ""
+  (* Nodes are terminal atoms with names *)
+
+schema Link
+  handle: AtomHandle
+  type: AtomType
+  outgoing: seq AtomHandle
+  truth_value: TruthValue
+  attention_value: AttentionValue
+where
+  handle ≠ ATOM_HANDLE_INVALID
+  AtomTypeProperties(type).is_link = true
+  #outgoing ≥ 1
+  ∀ h: AtomHandle • h ∈ outgoing ⇒ h ≠ ATOM_HANDLE_INVALID
+  (* Links connect atoms, outgoing set must be non-empty *)
+  (* All handles in outgoing set must be valid *)
+
+schema Atom
+  node: Node option
+  link: Link option
+where
+  (node.is_some ∧ link.is_none) ∨ (node.is_none ∧ link.is_some)
+  (* An atom is either a node or a link, but not both *)
+
+(*=============================================================================
+ * AtomSpace - Hypergraph Database
+ *============================================================================*)
+
+schema AtomSpace
+  atoms: AtomHandle ⇀ Atom
+  type_index: AtomType ⇀ ℙ AtomHandle
+  name_index: String ⇀ ℙ AtomHandle
+  incoming_index: AtomHandle ⇀ ℙ AtomHandle
+  parent: AtomSpace option
+  children: ℙ AtomSpace
+where
+  (* All atoms have unique handles *)
+  ∀ h1, h2: AtomHandle • h1 ∈ dom atoms ∧ h2 ∈ dom atoms ∧ h1 ≠ h2 
+    ⇒ atoms(h1) ≠ atoms(h2)
+  
+  (* Type index is consistent *)
+  ∀ t: AtomType, h: AtomHandle • h ∈ type_index(t) ⇔ 
+    (h ∈ dom atoms ∧ 
+     ((atoms(h).node.is_some ∧ atoms(h).node.value.type = t) ∨
+      (atoms(h).link.is_some ∧ atoms(h).link.value.type = t)))
+  
+  (* Name index is consistent for nodes *)
+  ∀ n: String, h: AtomHandle • h ∈ name_index(n) ⇔
+    (h ∈ dom atoms ∧ atoms(h).node.is_some ∧ atoms(h).node.value.name = n)
+  
+  (* Incoming index is consistent *)
+  ∀ h1, h2: AtomHandle • h2 ∈ incoming_index(h1) ⇔
+    (h1 ∈ dom atoms ∧ h2 ∈ dom atoms ∧
+     atoms(h2).link.is_some ∧ h1 ∈ atoms(h2).link.value.outgoing)
+  
+  (* All outgoing handles must exist *)
+  ∀ h: AtomHandle • h ∈ dom atoms ∧ atoms(h).link.is_some ⇒
+    (∀ out: AtomHandle • out ∈ atoms(h).link.value.outgoing ⇒ out ∈ dom atoms)
+  
+  (* Child atomspaces are distinct *)
+  ∀ c1, c2: AtomSpace • c1 ∈ children ∧ c2 ∈ children ∧ c1 ≠ c2 ⇒
+    dom c1.atoms ∩ dom c2.atoms = ∅
+  
+  (* Parent relationship is consistent *)
+  ∀ c: AtomSpace • c ∈ children ⇒ c.parent = some(self)
+  
+  (* No cycles in parent-child hierarchy *)
+  parent* ∩ {self} = ∅
+
+(*=============================================================================
+ * Attention Bank
+ *============================================================================*)
+
+schema AttentionBank
+  atomspace: AtomSpace
+  attentional_focus_boundary: ℤ
+  total_sti: ℤ
+  total_lti: ℤ
+where
+  (* Total STI is sum of all atom STIs *)
+  total_sti = Σ {h: AtomHandle | h ∈ dom atomspace.atoms} 
+                (if atomspace.atoms(h).node.is_some then
+                   atomspace.atoms(h).node.value.attention_value.sti
+                 else
+                   atomspace.atoms(h).link.value.attention_value.sti)
+  
+  (* Total LTI is sum of all atom LTIs *)
+  total_lti = Σ {h: AtomHandle | h ∈ dom atomspace.atoms}
+                (if atomspace.atoms(h).node.is_some then
+                   atomspace.atoms(h).node.value.attention_value.lti
+                 else
+                   atomspace.atoms(h).link.value.attention_value.lti)
+  
+  (* Attentional focus boundary separates attended atoms *)
+  (* Atoms with STI > boundary are in attentional focus *)
+
+(*=============================================================================
+ * Data Integrity Invariants
+ *============================================================================*)
+
+(* Global invariant: No dangling references *)
+invariant NO_DANGLING_REFS
+  ∀ as: AtomSpace, h: AtomHandle • h ∈ dom as.atoms ∧ as.atoms(h).link.is_some ⇒
+    (∀ out: AtomHandle • out ∈ as.atoms(h).link.value.outgoing ⇒ out ∈ dom as.atoms)
+
+(* Global invariant: Incoming sets are consistent with outgoing sets *)
+invariant INCOMING_OUTGOING_CONSISTENT
+  ∀ as: AtomSpace, h1, h2: AtomHandle • 
+    h2 ∈ as.incoming_index(h1) ⇔
+    (h1 ∈ dom as.atoms ∧ h2 ∈ dom as.atoms ∧
+     as.atoms(h2).link.is_some ∧ h1 ∈ as.atoms(h2).link.value.outgoing)
+
+(* Global invariant: Unique node identification *)
+invariant UNIQUE_NODE_IDENTIFICATION
+  ∀ as: AtomSpace, h1, h2: AtomHandle •
+    h1 ∈ dom as.atoms ∧ h2 ∈ dom as.atoms ∧
+    as.atoms(h1).node.is_some ∧ as.atoms(h2).node.is_some ∧
+    as.atoms(h1).node.value.type = as.atoms(h2).node.value.type ∧
+    as.atoms(h1).node.value.name = as.atoms(h2).node.value.name
+    ⇒ h1 = h2
+
+(* Global invariant: Unique link identification *)
+invariant UNIQUE_LINK_IDENTIFICATION
+  ∀ as: AtomSpace, h1, h2: AtomHandle •
+    h1 ∈ dom as.atoms ∧ h2 ∈ dom as.atoms ∧
+    as.atoms(h1).link.is_some ∧ as.atoms(h2).link.is_some ∧
+    as.atoms(h1).link.value.type = as.atoms(h2).link.value.type ∧
+    as.atoms(h1).link.value.outgoing = as.atoms(h2).link.value.outgoing
+    ⇒ h1 = h2
+
+(* Global invariant: Attention value bounds *)
+invariant ATTENTION_VALUE_BOUNDS
+  ∀ as: AtomSpace, h: AtomHandle • h ∈ dom as.atoms ⇒
+    (as.atoms(h).node.is_some ⇒
+      -32768 ≤ as.atoms(h).node.value.attention_value.sti ≤ 32767 ∧
+      -32768 ≤ as.atoms(h).node.value.attention_value.lti ≤ 32767) ∧
+    (as.atoms(h).link.is_some ⇒
+      -32768 ≤ as.atoms(h).link.value.attention_value.sti ≤ 32767 ∧
+      -32768 ≤ as.atoms(h).link.value.attention_value.lti ≤ 32767)
+
+(* Global invariant: Truth value bounds *)
+invariant TRUTH_VALUE_BOUNDS
+  ∀ as: AtomSpace, h: AtomHandle • h ∈ dom as.atoms ⇒
+    (as.atoms(h).node.is_some ⇒
+      0 ≤ as.atoms(h).node.value.truth_value.strength ≤ 1 ∧
+      0 ≤ as.atoms(h).node.value.truth_value.confidence ≤ 1) ∧
+    (as.atoms(h).link.is_some ⇒
+      0 ≤ as.atoms(h).link.value.truth_value.strength ≤ 1 ∧
+      0 ≤ as.atoms(h).link.value.truth_value.confidence ≤ 1)
+
+(*=============================================================================
+ * Notes
+ *============================================================================*)
+
+(* This specification formalizes the core data model of CoGWXP-OS9's AtomSpace.
+ * It captures:
+ * - The hypergraph structure with nodes and links
+ * - Truth values for uncertain reasoning
+ * - Attention values for cognitive economics
+ * Indexing structures for efficient queries
+ * - Hierarchical atomspace organization
+ * - Critical data integrity invariants
+ *
+ * The specification is grounded in the actual implementation found in
+ * cogwxp/opencog/atomspace/atomspace.h and provides a formal foundation
+ * for reasoning about the correctness of AtomSpace operations.
+ *)
