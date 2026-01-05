@@ -1,0 +1,520 @@
+(*=============================================================================
+ * CoGWXP-OS9 Integration Contracts - Z++ Formal Specification
+ * 
+ * This specification formalizes the external integration contracts for
+ * CoGWXP-OS9, including 9P protocol, Dis VM, and distributed communication.
+ *
+ * Based on: cogwxp/plan9/9p/9p.h, cogwxp/inferno/dis/, cogwxp/integration/
+ *============================================================================*)
+
+include "data_model.zpp"
+include "system_state.zpp"
+
+(*=============================================================================
+ * 9P Protocol Integration
+ *============================================================================*)
+
+P9MessageType ::= TVERSION | RVERSION | TAUTH | RAUTH | TATTACH | RATTACH |
+                  TERROR | RERROR | TFLUSH | RFLUSH | TWALK | RWALK |
+                  TOPEN | ROPEN | TCREATE | RCREATE | TREAD | RREAD |
+                  TWRITE | RWRITE | TCLUNK | RCLUNK | TREMOVE | RREMOVE |
+                  TSTAT | RSTAT | TWSTAT | RWSTAT
+
+P9OpenMode ::= OREAD | OWRITE | ORDWR | OEXEC | OTRUNC | ORCLOSE
+
+schema P9QID
+  qid_type: ℕ
+  version: ℕ
+  path: ℕ
+where
+  qid_type ≤ 255
+
+schema P9Stat
+  size: ℕ
+  stat_type: ℕ
+  dev: ℕ
+  qid: P9QID
+  mode: ℕ
+  atime: ℕ
+  mtime: ℕ
+  length: ℕ
+  name: String
+  uid: String
+  gid: String
+  muid: String
+where
+  name ≠ ""
+  uid ≠ ""
+  gid ≠ ""
+
+(* 9P Attach Operation - Establish connection *)
+schema P9Attach
+  Δ P9Connection
+  Δ AtomSpace
+  fid?: FID
+  uname?: String
+  aname?: String
+  root_qid!: P9QID
+where
+  (* Preconditions *)
+  fid? ∉ dom open_fids
+  uname? ≠ ""
+  
+  (* Authenticate user *)
+  authenticated' = true
+  user_name' = uname?
+  
+  (* Create root FID mapping *)
+  open_fids' = open_fids ∪ {fid? ↦ "/"}
+  
+  (* Return root QID *)
+  root_qid! = P9QID(0x80, 0, 0)  (* Directory type *)
+  
+  (* Frame conditions *)
+  conn_id' = conn_id
+  peer_address' = peer_address
+  max_message_size' = max_message_size
+
+(* 9P Walk Operation - Navigate filesystem *)
+schema P9Walk
+  Ξ P9Connection
+  Ξ AtomSpace
+  fid?: FID
+  newfid?: FID
+  wnames?: seq String
+  qids!: seq P9QID
+where
+  (* Preconditions *)
+  authenticated = true
+  fid? ∈ dom open_fids
+  #wnames? ≤ 16
+  
+  (* Walk path from fid *)
+  let current_path = open_fids(fid?)
+  let target_path = construct_path(current_path, wnames?)
+  in
+    if path_exists_in_atomspace(target_path, atomspace) then
+      (* Return QIDs for each step *)
+      qids! = { qid_for_path(extend_path(current_path, take(i, wnames?)), atomspace) |
+               i: ℕ • 1 ≤ i ≤ #wnames? }
+      (* Update newfid mapping *)
+      open_fids' = open_fids ∪ {newfid? ↦ target_path}
+    else
+      qids! = ⟨⟩
+
+function path_exists_in_atomspace(path: String, as: AtomSpace): 𝔹
+  (* Checks if path corresponds to a valid atom or virtual file *)
+
+function qid_for_path(path: String, as: AtomSpace): P9QID
+  (* Generates QID for a given path in atomspace *)
+
+(* 9P Read Operation - Read from file/atom *)
+schema P9Read
+  Ξ P9Connection
+  Ξ AtomSpace
+  fid?: FID
+  offset?: ℕ
+  count?: ℕ
+  data!: seq ℕ
+where
+  (* Preconditions *)
+  authenticated = true
+  fid? ∈ dom open_fids
+  count? > 0
+  count? ≤ max_message_size
+  
+  (* Read data from resource *)
+  let resource_path = open_fids(fid?)
+  in
+    if is_atom_path(resource_path) then
+      (* Read atom data *)
+      let atom_handle = path_to_atom_handle(resource_path, atomspace)
+      let atom_data = serialize_atom(atomspace.atoms(atom_handle))
+      in
+        data! = take(count?, drop(offset?, atom_data))
+    else if is_control_file(resource_path) then
+      (* Read control/status data *)
+      data! = take(count?, drop(offset?, read_control_file(resource_path, atomspace)))
+    else
+      data! = ⟨⟩
+
+function serialize_atom(a: Atom): seq ℕ
+  (* Serializes atom to byte sequence *)
+
+function is_atom_path(path: String): 𝔹
+  (* Checks if path corresponds to an atom *)
+
+function path_to_atom_handle(path: String, as: AtomSpace): AtomHandle
+  (* Converts 9P path to atom handle *)
+
+(* 9P Write Operation - Write to file/atom *)
+schema P9Write
+  Ξ P9Connection
+  Δ AtomSpace
+  fid?: FID
+  offset?: ℕ
+  data?: seq ℕ
+  count!: ℕ
+where
+  (* Preconditions *)
+  authenticated = true
+  fid? ∈ dom open_fids
+  #data? ≤ max_message_size
+  
+  (* Write data to resource *)
+  let resource_path = open_fids(fid?)
+  in
+    if is_atom_path(resource_path) then
+      (* Update atom data *)
+      let atom_handle = path_to_atom_handle(resource_path, atomspace)
+      let updated_atom = deserialize_and_update_atom(atomspace.atoms(atom_handle), data?, offset?)
+      in
+        atomspace'.atoms = atomspace.atoms ⊕ {atom_handle ↦ updated_atom}
+        count! = #data?
+    else if is_control_file(resource_path) then
+      (* Write to control file (e.g., create new atom) *)
+      execute_control_command(resource_path, data?, atomspace')
+      count! = #data?
+    else
+      count! = 0
+  
+  (* Frame conditions *)
+  atomspace'.type_index = atomspace.type_index
+  atomspace'.name_index = atomspace.name_index
+  atomspace'.incoming_index = atomspace.incoming_index
+
+function deserialize_and_update_atom(a: Atom, data: seq ℕ, offset: ℕ): Atom
+  (* Deserializes data and updates atom *)
+
+function execute_control_command(path: String, data: seq ℕ, as: AtomSpace)
+  (* Executes command written to control file *)
+
+(* 9P Clunk Operation - Close FID *)
+schema P9Clunk
+  Δ P9Connection
+  fid?: FID
+where
+  (* Preconditions *)
+  authenticated = true
+  fid? ∈ dom open_fids
+  
+  (* Remove FID mapping *)
+  open_fids' = open_fids \ {fid?}
+  
+  (* Frame conditions *)
+  conn_id' = conn_id
+  peer_address' = peer_address
+  authenticated' = authenticated
+  user_name' = user_name
+  max_message_size' = max_message_size
+
+(*=============================================================================
+ * Dis VM Integration
+ *============================================================================*)
+
+DisValue ::= DisInt ℤ | DisReal ℝ | DisString String | DisPointer ℕ |
+             DisChannel ℕ | DisNil
+
+schema DisVMState
+  modules: ModuleName ⇀ DisModule
+  threads: ThreadID ⇀ DisThread
+  heap: ℕ ⇀ DisValue
+  channel_queue: ℕ ⇀ seq DisValue
+  atomspace: AtomSpace
+where
+  (* All threads reference valid modules *)
+  ∀ tid: ThreadID • tid ∈ dom threads ⇒
+    threads(tid).module ∈ dom modules
+  
+  (* Loaded modules have bytecode *)
+  ∀ m: ModuleName • m ∈ dom modules ∧ modules(m).loaded ⇒
+    #modules(m).bytecode > 0
+
+(* Load Dis Module *)
+schema LoadDisModule
+  Δ DisVMState
+  module_path?: String
+  module_name!: ModuleName
+where
+  (* Preconditions *)
+  module_path? ≠ ""
+  
+  (* Load module bytecode *)
+  let bytecode = load_bytecode_from_file(module_path?)
+  let name = extract_module_name(module_path?)
+  in
+    module_name! = name
+    let new_module = DisModule(name, bytecode, true, none)
+    in
+      modules' = modules ∪ {name ↦ new_module}
+      
+      (* Register module in atomspace *)
+      let atom_handle = add_dis_module_node(atomspace, name)
+      in
+        modules'(name).atom_handle = some(atom_handle)
+  
+  (* Frame conditions *)
+  threads' = threads
+  heap' = heap
+  channel_queue' = channel_queue
+
+function load_bytecode_from_file(path: String): seq ℕ
+  (* Loads Dis bytecode from file *)
+
+function extract_module_name(path: String): String
+  (* Extracts module name from path *)
+
+function add_dis_module_node(as: AtomSpace, name: String): AtomHandle
+  (* Adds DIS_MODULE_NODE to atomspace *)
+
+(* Execute Dis Bytecode *)
+schema ExecuteDisBytecode
+  Δ DisVMState
+  thread_id?: ThreadID
+  steps?: ℕ
+where
+  (* Preconditions *)
+  thread_id? ∈ dom threads
+  threads(thread_id?).status ∈ {READY, RUNNING}
+  steps? > 0
+  
+  (* Execute bytecode instructions *)
+  let thread = threads(thread_id?)
+  let module = modules(thread.module)
+  in
+    (* Execute up to steps? instructions *)
+    let new_thread = execute_instructions(thread, module, steps?, heap, channel_queue)
+    in
+      threads' = threads ⊕ {thread_id? ↦ new_thread}
+      heap' = new_thread.heap
+      
+  (* Frame conditions *)
+  modules' = modules
+  atomspace' = atomspace
+
+function execute_instructions(t: DisThread, m: DisModule, steps: ℕ,
+                              h: ℕ ⇀ DisValue, cq: ℕ ⇀ seq DisValue): DisThread
+  (* Executes bytecode instructions *)
+
+(* Dis Channel Communication *)
+schema DisChannelSend
+  Δ DisVMState
+  thread_id?: ThreadID
+  channel_id?: ℕ
+  value?: DisValue
+where
+  (* Preconditions *)
+  thread_id? ∈ dom threads
+  channel_id? ≠ 0
+  
+  (* Send value on channel *)
+  if channel_id? ∈ dom channel_queue then
+    channel_queue' = channel_queue ⊕ {channel_id? ↦ (channel_queue(channel_id?) ⁀ ⟨value?⟩)}
+  else
+    channel_queue' = channel_queue ∪ {channel_id? ↦ ⟨value?⟩}
+  
+  (* Frame conditions *)
+  modules' = modules
+  threads' = threads
+  heap' = heap
+  atomspace' = atomspace
+
+schema DisChannelRecv
+  Δ DisVMState
+  thread_id?: ThreadID
+  channel_id?: ℕ
+  value!: DisValue option
+where
+  (* Preconditions *)
+  thread_id? ∈ dom threads
+  channel_id? ≠ 0
+  
+  (* Receive value from channel *)
+  if channel_id? ∈ dom channel_queue ∧ #channel_queue(channel_id?) > 0 then
+    value! = some(head(channel_queue(channel_id?)))
+    channel_queue' = channel_queue ⊕ {channel_id? ↦ tail(channel_queue(channel_id?))}
+  else
+    value! = none
+    (* Block thread *)
+    threads' = threads ⊕ {thread_id? ↦ 
+      DisThread(threads(thread_id?).thread_id, threads(thread_id?).module,
+                threads(thread_id?).program_counter, BLOCKED,
+                threads(thread_id?).stack, threads(thread_id?).heap)}
+  
+  (* Frame conditions *)
+  modules' = modules
+  heap' = heap
+  atomspace' = atomspace
+
+(*=============================================================================
+ * Distributed Communication Integration
+ *============================================================================*)
+
+PeerID ::= ℕ
+
+schema DistributedPeer
+  peer_id: PeerID
+  address: String
+  port: ℕ
+  p9_connection: P9ConnID
+  atomspace_sync_enabled: 𝔹
+  last_sync_time: ℕ
+where
+  peer_id ≠ 0
+  address ≠ ""
+  1 ≤ port ≤ 65535
+
+(* Connect to Distributed Peer *)
+schema ConnectPeer
+  Δ CoGWXPSystem
+  address?: String
+  port?: ℕ
+  peer_id!: PeerID
+where
+  (* Preconditions *)
+  address? ≠ ""
+  1 ≤ port? ≤ 65535
+  state = RUNNING
+  
+  (* Establish 9P connection *)
+  let conn_id = (choose cid: P9ConnID | cid ∉ dom p9_connections)
+  let new_conn = P9Connection(conn_id, address?, false, "", {}, 8192)
+  in
+    p9_connections' = p9_connections ∪ {conn_id ↦ new_conn}
+    
+    (* Create peer record *)
+    peer_id! = (choose pid: PeerID | pid ∉ existing_peers(self))
+    let new_peer = DistributedPeer(peer_id!, address?, port?, conn_id, false, 0)
+    in
+      (* Store peer in system state *)
+      (* Peer management not explicitly modeled in CoGWXPSystem schema,
+         but would be added to distributed subsystem *)
+      true
+  
+  (* Frame conditions *)
+  state' = state
+  atomspace' = atomspace
+
+function existing_peers(sys: CoGWXPSystem): ℙ PeerID
+  (* Returns set of existing peer IDs *)
+
+(* Distributed Inference Across Peers *)
+schema DistributedInference
+  Ξ CoGWXPSystem
+  Δ PLNEngine
+  source?: AtomHandle
+  peer_ids?: ℙ PeerID
+  max_steps?: ℕ
+  aggregated_results!: ℙ AtomHandle
+where
+  (* Preconditions *)
+  source? ∈ dom atomspace.atoms
+  #peer_ids? ≥ 1
+  max_steps? > 0
+  state = RUNNING
+  
+  (* Execute inference locally *)
+  let local_results = forward_chain(pln_engine, source?, max_steps?)
+  in
+    (* Request inference from each peer via 9P *)
+    let peer_results = { execute_remote_inference(pid, source?, max_steps?, p9_connections) |
+                        pid: PeerID • pid ∈ peer_ids? }
+    in
+      (* Aggregate results *)
+      aggregated_results! = local_results ∪ (⋃ peer_results)
+      
+      (* Import remote atoms to local atomspace *)
+      ∀ h: AtomHandle • h ∈ (⋃ peer_results) \ dom atomspace.atoms ⇒
+        h ∈ dom atomspace'.atoms
+
+function execute_remote_inference(pid: PeerID, source: AtomHandle, steps: ℕ,
+                                  conns: P9ConnID ⇀ P9Connection): ℙ AtomHandle
+  (* Executes inference on remote peer via 9P *)
+
+(* Synchronize AtomSpace with Peers *)
+schema SyncAtomSpaceWithPeers
+  Δ CoGWXPSystem
+  peer_ids?: ℙ PeerID
+where
+  (* Preconditions *)
+  #peer_ids? ≥ 1
+  state = RUNNING
+  
+  (* For each peer *)
+  ∀ pid: PeerID • pid ∈ peer_ids? ⇒
+    (* Identify new atoms since last sync *)
+    let new_atoms = atoms_since_last_sync(atomspace, pid)
+    in
+      (* Export new atoms to peer via 9P *)
+      export_atoms_to_peer(pid, new_atoms, p9_connections')
+      (* Import new atoms from peer *)
+      let remote_atoms = import_atoms_from_peer(pid, p9_connections)
+      in
+        (* Merge remote atoms into local atomspace *)
+        merge_atoms_into_atomspace(remote_atoms, atomspace')
+  
+  (* Update sync timestamps *)
+  (* Would update peer records with current timestamp *)
+  
+  (* Frame conditions *)
+  state' = state
+
+function atoms_since_last_sync(as: AtomSpace, pid: PeerID): ℙ AtomHandle
+  (* Returns atoms added since last sync with peer *)
+
+function export_atoms_to_peer(pid: PeerID, atoms: ℙ AtomHandle,
+                              conns: P9ConnID ⇀ P9Connection)
+  (* Exports atoms to peer via 9P write *)
+
+function import_atoms_from_peer(pid: PeerID, conns: P9ConnID ⇀ P9Connection): ℙ Atom
+  (* Imports atoms from peer via 9P read *)
+
+function merge_atoms_into_atomspace(atoms: ℙ Atom, as: AtomSpace)
+  (* Merges atoms, resolving conflicts by truth value revision *)
+
+(*=============================================================================
+ * Integration Invariants
+ *============================================================================*)
+
+(* Invariant: 9P FIDs must be consistent *)
+invariant P9_FID_CONSISTENCY
+  ∀ conn: P9Connection, fid: FID •
+    fid ∈ dom conn.open_fids ⇒
+    conn.open_fids(fid) ≠ ""
+
+(* Invariant: Dis threads must reference loaded modules *)
+invariant DIS_THREAD_MODULE_LOADED
+  ∀ vm: DisVMState, tid: ThreadID •
+    tid ∈ dom vm.threads ⇒
+    vm.threads(tid).module ∈ dom vm.modules ∧
+    vm.modules(vm.threads(tid).module).loaded = true
+
+(* Invariant: Distributed peer connections must be valid *)
+invariant DISTRIBUTED_PEER_CONNECTION_VALID
+  ∀ sys: CoGWXPSystem, peer: DistributedPeer •
+    peer.p9_connection ∈ dom sys.p9_connections
+
+(* Invariant: AtomSpace export via 9P preserves atom identity *)
+invariant ATOMSPACE_9P_IDENTITY_PRESERVATION
+  ∀ as: AtomSpace, path: String, h: AtomHandle •
+    h = path_to_atom_handle(path, as) ⇒
+    path = atom_handle_to_path(h, as)
+
+function atom_handle_to_path(h: AtomHandle, as: AtomSpace): String
+  (* Converts atom handle to 9P path *)
+
+(*=============================================================================
+ * Notes
+ *============================================================================*)
+
+(* This specification formalizes the external integration contracts of CoGWXP-OS9.
+ * It captures:
+ * - 9P protocol operations for network-transparent resource access
+ * - Dis VM operations for portable bytecode execution
+ * - Distributed communication for multi-peer inference
+ * - AtomSpace synchronization across peers
+ * - Integration invariants
+ *
+ * The specification is grounded in the actual implementation found in
+ * cogwxp/plan9/9p/, cogwxp/inferno/, and cogwxp/integration/.
+ *)

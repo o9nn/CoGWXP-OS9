@@ -1,0 +1,522 @@
+(*=============================================================================
+ * CoGWXP-OS9 Operations - Z++ Formal Specification
+ * 
+ * This specification formalizes the core operations of CoGWXP-OS9.
+ *
+ * Based on: cogwxp/integration/cogwxp_os.h, cogwxp/opencog/atomspace/atomspace.h,
+ *           cogwxp/opencog/pln/pln.h
+ *============================================================================*)
+
+include "data_model.zpp"
+include "system_state.zpp"
+
+(*=============================================================================
+ * AtomSpace Operations
+ *============================================================================*)
+
+(* Add Node Operation *)
+schema AddNode
+  Δ AtomSpace
+  type?: AtomType
+  name?: String
+  tv?: TruthValue
+  handle!: AtomHandle
+where
+  (* Preconditions *)
+  AtomTypeProperties(type?).is_node = true
+  name? ≠ ""
+  
+  (* Check if node already exists *)
+  let existing = { h: AtomHandle | h ∈ dom atoms ∧
+                   atoms(h).node.is_some ∧
+                   atoms(h).node.value.type = type? ∧
+                   atoms(h).node.value.name = name? }
+  in
+    if #existing > 0 then
+      (* Node exists, return existing handle and update TV *)
+      handle! = (choose h: AtomHandle | h ∈ existing)
+      atoms' = atoms ⊕ {handle! ↦ Atom(some(Node(handle!, type?, name?, tv?, atoms(handle!).node.value.attention_value)), none)}
+      type_index' = type_index
+      name_index' = name_index
+      incoming_index' = incoming_index
+    else
+      (* Create new node *)
+      handle! = (choose h: AtomHandle | h ∉ dom atoms ∧ h ≠ ATOM_HANDLE_INVALID)
+      let new_node = Node(handle!, type?, name?, tv?, ATTENTION_VALUE_DEFAULT)
+      let new_atom = Atom(some(new_node), none)
+      in
+        atoms' = atoms ∪ {handle! ↦ new_atom}
+        type_index' = type_index ⊕ {type? ↦ (type_index(type?) ∪ {handle!})}
+        name_index' = name_index ⊕ {name? ↦ (name_index(name?) ∪ {handle!})}
+        incoming_index' = incoming_index
+    
+  (* Frame conditions *)
+  parent' = parent
+  children' = children
+
+(* Add Link Operation *)
+schema AddLink
+  Δ AtomSpace
+  type?: AtomType
+  outgoing?: seq AtomHandle
+  tv?: TruthValue
+  handle!: AtomHandle
+where
+  (* Preconditions *)
+  AtomTypeProperties(type?).is_link = true
+  #outgoing? ≥ 1
+  ∀ h: AtomHandle • h ∈ outgoing? ⇒ h ∈ dom atoms
+  
+  (* Check if link already exists *)
+  let existing = { h: AtomHandle | h ∈ dom atoms ∧
+                   atoms(h).link.is_some ∧
+                   atoms(h).link.value.type = type? ∧
+                   atoms(h).link.value.outgoing = outgoing? }
+  in
+    if #existing > 0 then
+      (* Link exists, return existing handle and update TV *)
+      handle! = (choose h: AtomHandle | h ∈ existing)
+      atoms' = atoms ⊕ {handle! ↦ Atom(none, some(Link(handle!, type?, outgoing?, tv?, atoms(handle!).link.value.attention_value)))}
+      type_index' = type_index
+      name_index' = name_index
+      incoming_index' = incoming_index
+    else
+      (* Create new link *)
+      handle! = (choose h: AtomHandle | h ∉ dom atoms ∧ h ≠ ATOM_HANDLE_INVALID)
+      let new_link = Link(handle!, type?, outgoing?, tv?, ATTENTION_VALUE_DEFAULT)
+      let new_atom = Atom(none, some(new_link))
+      in
+        atoms' = atoms ∪ {handle! ↦ new_atom}
+        type_index' = type_index ⊕ {type? ↦ (type_index(type?) ∪ {handle!})}
+        name_index' = name_index
+        (* Update incoming index for all outgoing atoms *)
+        incoming_index' = incoming_index ⊕
+          { out ↦ (incoming_index(out) ∪ {handle!}) | out: AtomHandle • out ∈ outgoing? }
+    
+  (* Frame conditions *)
+  parent' = parent
+  children' = children
+
+(* Query AtomSpace Operation *)
+schema QueryAtomSpace
+  Ξ AtomSpace
+  query?: AtomQuery
+  results!: ℙ AtomHandle
+where
+  (* Preconditions *)
+  query?.atomspace = self
+  
+  (* Execute query *)
+  results! = { h: AtomHandle | h ∈ dom atoms ∧
+               (* Type filter *)
+               (query?.type_filter.is_none ∨
+                (atoms(h).node.is_some ∧ atoms(h).node.value.type = query?.type_filter.value) ∨
+                (atoms(h).link.is_some ∧ atoms(h).link.value.type = query?.type_filter.value)) ∧
+               (* Name filter *)
+               (query?.name_pattern.is_none ∨
+                (atoms(h).node.is_some ∧ atoms(h).node.value.name matches query?.name_pattern.value)) ∧
+               (* Strength filter *)
+               (query?.min_strength.is_none ∨
+                (atoms(h).node.is_some ∧ atoms(h).node.value.truth_value.strength ≥ query?.min_strength.value) ∨
+                (atoms(h).link.is_some ∧ atoms(h).link.value.truth_value.strength ≥ query?.min_strength.value)) ∧
+               (* Confidence filter *)
+               (query?.min_confidence.is_none ∨
+                (atoms(h).node.is_some ∧ atoms(h).node.value.truth_value.confidence ≥ query?.min_confidence.value) ∨
+                (atoms(h).link.is_some ∧ atoms(h).link.value.truth_value.confidence ≥ query?.min_confidence.value)) ∧
+               (* STI filter *)
+               (query?.min_sti.is_none ∨
+                (atoms(h).node.is_some ∧ atoms(h).node.value.attention_value.sti ≥ query?.min_sti.value) ∨
+                (atoms(h).link.is_some ∧ atoms(h).link.value.attention_value.sti ≥ query?.min_sti.value)) }
+
+(* Stimulate Atom (Update STI) *)
+schema StimulateAtom
+  Δ AtomSpace
+  handle?: AtomHandle
+  stimulus?: ℤ
+where
+  (* Preconditions *)
+  handle? ∈ dom atoms
+  
+  (* Update STI *)
+  if atoms(handle?).node.is_some then
+    let old_node = atoms(handle?).node.value
+    let old_av = old_node.attention_value
+    let new_sti = max(-32768, min(32767, old_av.sti + stimulus?))
+    let new_av = AttentionValue(new_sti, old_av.lti, old_av.vlti)
+    let new_node = Node(old_node.handle, old_node.type, old_node.name, old_node.truth_value, new_av)
+    in
+      atoms' = atoms ⊕ {handle? ↦ Atom(some(new_node), none)}
+  else
+    let old_link = atoms(handle?).link.value
+    let old_av = old_link.attention_value
+    let new_sti = max(-32768, min(32767, old_av.sti + stimulus?))
+    let new_av = AttentionValue(new_sti, old_av.lti, old_av.vlti)
+    let new_link = Link(old_link.handle, old_link.type, old_link.outgoing, old_link.truth_value, new_av)
+    in
+      atoms' = atoms ⊕ {handle? ↦ Atom(none, some(new_link))}
+  
+  (* Frame conditions *)
+  type_index' = type_index
+  name_index' = name_index
+  incoming_index' = incoming_index
+  parent' = parent
+  children' = children
+
+(*=============================================================================
+ * PLN Operations
+ *============================================================================*)
+
+(* Forward Chain Operation *)
+schema ForwardChain
+  Ξ PLNEngine
+  Δ AtomSpace
+  source?: AtomHandle
+  max_steps?: ℕ
+  derived_atoms!: ℙ AtomHandle
+  steps_taken!: ℕ
+where
+  (* Preconditions *)
+  source? ∈ dom atomspace.atoms
+  max_steps? > 0
+  
+  (* Execute forward chaining *)
+  let reachable = forward_chain_closure(atomspace, source?, max_steps?, enabled_rules, rule_weights)
+  in
+    derived_atoms! = reachable \ {source?}
+    steps_taken! = min(max_steps?, #reachable)
+    (* All derived atoms are added to atomspace *)
+    ∀ h: AtomHandle • h ∈ derived_atoms! ⇒ h ∈ dom atomspace'.atoms
+    
+  (* Update inference statistics *)
+  total_inferences' = total_inferences + steps_taken!
+
+function forward_chain_closure(as: AtomSpace, start: AtomHandle, max: ℕ, 
+                               rules: ℙ PLNRule, weights: PLNRule ⇀ ℝ): ℙ AtomHandle
+  (* Computes transitive closure of inference from start atom *)
+
+(* Backward Chain Operation *)
+schema BackwardChain
+  Ξ PLNEngine
+  Δ AtomSpace
+  goal?: AtomHandle
+  max_depth?: ℕ
+  proof_atoms!: ℙ AtomHandle
+  goal_achieved!: 𝔹
+  steps_taken!: ℕ
+where
+  (* Preconditions *)
+  goal? ∈ dom atomspace.atoms
+  max_depth? > 0
+  
+  (* Execute backward chaining *)
+  let proof_tree = backward_chain_search(atomspace, goal?, max_depth?, enabled_rules, min_confidence_threshold)
+  in
+    proof_atoms! = atoms_in_proof_tree(proof_tree)
+    goal_achieved! = is_goal_proven(proof_tree, goal?, min_confidence_threshold)
+    steps_taken! = depth_of_proof_tree(proof_tree)
+    (* All proof atoms exist in atomspace *)
+    proof_atoms! ⊆ dom atomspace.atoms
+    
+  (* Update inference statistics *)
+  total_inferences' = total_inferences + steps_taken!
+
+function backward_chain_search(as: AtomSpace, goal: AtomHandle, depth: ℕ,
+                               rules: ℙ PLNRule, min_conf: ℝ): ProofTree
+  (* Searches for proof of goal up to given depth *)
+
+(* Apply PLN Rule *)
+schema ApplyRule
+  Ξ PLNEngine
+  Δ AtomSpace
+  rule?: PLNRule
+  premises?: seq AtomHandle
+  conclusion!: AtomHandle option
+  conclusion_tv!: TruthValue
+where
+  (* Preconditions *)
+  rule? ∈ enabled_rules
+  #premises? ≥ 1
+  ∀ p: AtomHandle • p ∈ premises? ⇒ p ∈ dom atomspace.atoms
+  
+  (* Apply rule to derive conclusion *)
+  if is_rule_applicable(rule?, premises?, atomspace) then
+    let computed_tv = compute_truth_value(rule?, premises?, atomspace)
+    in
+      if computed_tv.confidence ≥ min_confidence_threshold then
+        (* Create conclusion atom *)
+        let conclusion_atom = derive_conclusion(rule?, premises?, computed_tv, atomspace)
+        in
+          conclusion! = some(conclusion_atom)
+          conclusion_tv! = computed_tv
+          (* Add conclusion to atomspace *)
+          conclusion_atom ∈ dom atomspace'.atoms
+      else
+        conclusion! = none
+        conclusion_tv! = TRUTH_VALUE_DEFAULT
+  else
+    conclusion! = none
+    conclusion_tv! = TRUTH_VALUE_DEFAULT
+  
+  (* Update statistics *)
+  total_inferences' = total_inferences + 1
+
+(*=============================================================================
+ * CogServer Operations
+ *============================================================================*)
+
+(* Spawn Agent Operation *)
+schema SpawnAgent
+  Δ CogServer
+  name?: String
+  type?: AgentType
+  capabilities?: ℙ String
+  agent_id!: AgentID
+where
+  (* Preconditions *)
+  name? ≠ ""
+  #capabilities? ≥ 1
+  
+  (* Create new agent *)
+  agent_id! = (choose id: AgentID | id ∉ dom agents)
+  let sub_atomspace = (choose as: AtomSpace | as ∈ atomspace.children ∧
+                        as ∉ { agents(aid).atomspace | aid: AgentID • aid ∈ dom agents })
+  let new_agent = Agent(agent_id!, name?, type?, capabilities?, sub_atomspace, ⟨⟩, ⟨⟩, IDLE)
+  in
+    agents' = agents ∪ {agent_id! ↦ new_agent}
+    
+  (* Frame conditions *)
+  tasks' = tasks
+  pending_tasks' = pending_tasks
+  running_tasks' = running_tasks
+  active_agents' = active_agents
+  atomspace' = atomspace
+  agent_thread_pool_size' = agent_thread_pool_size
+
+(* Submit Task Operation *)
+schema SubmitTask
+  Δ CogServer
+  name?: String
+  goal?: AtomHandle
+  priority?: ℤ
+  task_id!: TaskID
+where
+  (* Preconditions *)
+  name? ≠ ""
+  goal? ∈ dom atomspace.atoms
+  -32768 ≤ priority? ≤ 32767
+  
+  (* Create new task *)
+  task_id! = (choose id: TaskID | id ∉ dom tasks)
+  let new_task = Task(task_id!, name?, goal?, priority?, PENDING, none, ⟨⟩, ⟨⟩, none, none)
+  in
+    tasks' = tasks ∪ {task_id! ↦ new_task}
+    (* Add to pending tasks queue *)
+    pending_tasks' = pending_tasks ⁀ ⟨task_id!⟩
+    
+  (* Frame conditions *)
+  agents' = agents
+  running_tasks' = running_tasks
+  active_agents' = active_agents
+  atomspace' = atomspace
+  agent_thread_pool_size' = agent_thread_pool_size
+
+(* Assign Goal to Agent Operation *)
+schema AssignGoal
+  Δ CogServer
+  agent_id?: AgentID
+  goal?: AtomHandle
+where
+  (* Preconditions *)
+  agent_id? ∈ dom agents
+  goal? ∈ dom atomspace.atoms
+  agents(agent_id?).status ∈ {IDLE, ACTIVE}
+  
+  (* Add goal to agent's inbox *)
+  let old_agent = agents(agent_id?)
+  let new_agent = Agent(old_agent.id, old_agent.name, old_agent.type,
+                        old_agent.capabilities, old_agent.atomspace,
+                        old_agent.inbox ⁀ ⟨goal?⟩, old_agent.outbox, ACTIVE)
+  in
+    agents' = agents ⊕ {agent_id? ↦ new_agent}
+    active_agents' = active_agents ∪ {agent_id?}
+    
+  (* Frame conditions *)
+  tasks' = tasks
+  pending_tasks' = pending_tasks
+  running_tasks' = running_tasks
+  atomspace' = atomspace
+  agent_thread_pool_size' = agent_thread_pool_size
+
+(*=============================================================================
+ * Niche Construction Operations
+ *============================================================================*)
+
+(* Opponent Processing Cycle *)
+schema OpponentCycle
+  Δ NicheConstructionEngine
+  Δ AtomSpace
+  goal?: AtomHandle
+  result_skill!: SkillID option
+where
+  (* Preconditions *)
+  enable_opponent_processing = true
+  goal? ∈ dom atomspace.atoms
+  
+  (* Phase 1: Propose *)
+  let proposals = propose_techniques(self, goal?, max_proposal_iterations)
+  in
+    (* Phase 2: Normalize *)
+    let scores = normalize_proposals(self, proposals)
+    in
+      (* Phase 3: Select best proposal *)
+      let best_proposal = (choose g: NicheGlyph | g ∈ proposals ∧
+                           ∀ g': NicheGlyph • g' ∈ proposals ⇒
+                           scores(g.id) ≥ scores(g'.id))
+      in
+        if scores(best_proposal.id) ≥ normalization_threshold then
+          (* Phase 4: Commit as skill *)
+          let skill_id = (choose id: SkillID | id ∉ dom skills)
+          let new_skill = NicheSkill(skill_id, best_proposal.name, best_proposal.id,
+                                     goal?, 0.0, 0, 0.0, ∅)
+          in
+            skills' = skills ∪ {skill_id ↦ new_skill}
+            glyphs' = glyphs ∪ {best_proposal.id ↦ best_proposal}
+            result_skill! = some(skill_id)
+        else
+          result_skill! = none
+          skills' = skills
+          glyphs' = glyphs
+  
+  (* Frame conditions *)
+  max_proposal_iterations' = max_proposal_iterations
+  normalization_threshold' = normalization_threshold
+  enable_opponent_processing' = enable_opponent_processing
+  enable_diffusion_generation' = enable_diffusion_generation
+
+(*=============================================================================
+ * Beast Mode Operations
+ *============================================================================*)
+
+(* Cognitive Fusion Operation *)
+schema CognitiveFusion
+  Δ BeastReactor
+  Δ AtomSpace
+  Δ PLNEngine
+  goal?: AtomHandle
+  strategy?: BeastFusionStrategy
+  modes?: ℙ BeastReasonMode
+  results!: ℙ AtomHandle
+  total_time!: ℝ
+where
+  (* Preconditions *)
+  goal? ∈ dom atomspace.atoms
+  #modes? ≥ 1
+  modes? ⊆ active_modes
+  
+  (* Execute fusion based on strategy *)
+  if strategy? = PARALLEL then
+    (* Launch parallel inference chains *)
+    let chain_results = { run_inference_chain(mode, goal?, atomspace, pln_engine) |
+                         mode: BeastReasonMode • mode ∈ modes? }
+    in
+      results! = ⋃ chain_results
+      total_time! = max_execution_time(chain_results)
+  else if strategy? = ENSEMBLE then
+    (* Run all modes and vote on results *)
+    let chain_results = { run_inference_chain(mode, goal?, atomspace, pln_engine) |
+                         mode: BeastReasonMode • mode ∈ modes? }
+    let voted_results = ensemble_vote(chain_results, #modes?)
+    in
+      results! = voted_results
+      total_time! = sum_execution_times(chain_results)
+  else
+    (* Other strategies (sequential, competitive, collaborative) *)
+    results! = execute_fusion_strategy(strategy?, modes?, goal?, atomspace, pln_engine)
+    total_time! = measure_execution_time(strategy?, modes?)
+  
+  (* Update statistics *)
+  total_inferences' = total_inferences + #results!
+  energy_consumed' = energy_consumed + compute_energy_cost(intensity, #results!, total_time!)
+  
+  (* Apply attention boost based on intensity *)
+  ∀ h: AtomHandle • h ∈ results! ⇒
+    atomspace'.atoms(h).node.is_some ⇒
+      atomspace'.atoms(h).node.value.attention_value.sti =
+        atomspace.atoms(h).node.value.attention_value.sti * sti_boost_factor
+
+(*=============================================================================
+ * System Lifecycle Operations
+ *============================================================================*)
+
+(* Initialize System *)
+schema InitializeSystem
+  Δ CoGWXPSystem
+where
+  (* Preconditions *)
+  state = UNINITIALIZED
+  
+  (* Initialize components *)
+  state' = INITIALIZING
+  atomspace' = atomspace_create()
+  cogserver' = cogserver_initialize(atomspace')
+  pln_engine' = pln_engine_initialize(atomspace')
+  unified_bridge' = unified_bridge_initialize(atomspace')
+  uptime_ms' = 0
+  
+  (* Postconditions *)
+  state' ∈ {INITIALIZING, RUNNING}
+  cogserver'.atomspace = atomspace'
+  pln_engine'.atomspace = atomspace'
+
+(* Start System *)
+schema StartSystem
+  Δ CoGWXPSystem
+where
+  (* Preconditions *)
+  state ∈ {INITIALIZING, HALTED}
+  
+  (* Start system *)
+  state' = RUNNING
+  uptime_ms' = uptime_ms
+  
+  (* Start services *)
+  ∀ aid: AgentID • aid ∈ dom cogserver.agents ⇒
+    cogserver'.agents(aid).status ∈ {IDLE, ACTIVE}
+
+(* Stop System *)
+schema StopSystem
+  Δ CoGWXPSystem
+where
+  (* Preconditions *)
+  state = RUNNING
+  
+  (* Stop system *)
+  state' = SHUTTING_DOWN
+  
+  (* Stop all agents *)
+  ∀ aid: AgentID • aid ∈ dom cogserver.agents ⇒
+    cogserver'.agents(aid).status = SUSPENDED
+  
+  (* Complete pending tasks *)
+  ∀ tid: TaskID • tid ∈ ran cogserver.pending_tasks ⇒
+    cogserver'.tasks(tid).status ∈ {COMPLETED, CANCELLED}
+  
+  (* Eventually reach halted state *)
+  state' ∈ {SHUTTING_DOWN, HALTED}
+
+(*=============================================================================
+ * Notes
+ *============================================================================*)
+
+(* This specification formalizes the core operations of CoGWXP-OS9.
+ * It captures:
+ * - AtomSpace operations (add, query, update)
+ * - PLN inference operations (forward chaining, backward chaining, rule application)
+ * - CogServer operations (agent spawning, task submission, goal assignment)
+ * - Niche construction operations (opponent processing)
+ * - Beast mode operations (cognitive fusion)
+ * - System lifecycle operations (initialization, start, stop)
+ *
+ * Each operation specifies preconditions, postconditions, and frame conditions.
+ * The specification is grounded in the actual implementation.
+ *)

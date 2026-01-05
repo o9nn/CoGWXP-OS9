@@ -1,0 +1,426 @@
+(*=============================================================================
+ * CoGWXP-OS9 System State - Z++ Formal Specification
+ * 
+ * This specification formalizes the overall system state of CoGWXP-OS9,
+ * including cognitive services, distributed computing, and kernel layers.
+ *
+ * Based on: cogwxp/integration/cogwxp_os.h
+ *============================================================================*)
+
+include "data_model.zpp"
+
+(*=============================================================================
+ * System State Enumeration
+ *============================================================================*)
+
+SystemState ::= UNINITIALIZED | INITIALIZING | RUNNING | 
+                SHUTTING_DOWN | HALTED | ERROR
+
+(*=============================================================================
+ * Agent State
+ *============================================================================*)
+
+AgentID ::= ℕ
+
+AgentType ::= REASONING | LEARNING | PERCEPTION | ACTION | ORCHESTRATION
+
+schema Agent
+  id: AgentID
+  name: String
+  type: AgentType
+  capabilities: ℙ String
+  atomspace: AtomSpace
+  inbox: seq AtomHandle
+  outbox: seq AtomHandle
+  status: {IDLE, ACTIVE, SUSPENDED, TERMINATED}
+where
+  id ≠ 0
+  name ≠ ""
+  #capabilities ≥ 1
+
+(*=============================================================================
+ * Task State
+ *============================================================================*)
+
+TaskID ::= ℕ
+
+schema Task
+  id: TaskID
+  name: String
+  goal: AtomHandle
+  priority: ℤ
+  status: {PENDING, RUNNING, COMPLETED, FAILED, CANCELLED}
+  assigned_agent: AgentID option
+  inputs: seq AtomHandle
+  outputs: seq AtomHandle
+  start_time: ℕ option
+  end_time: ℕ option
+where
+  id ≠ 0
+  name ≠ ""
+  -32768 ≤ priority ≤ 32767
+  (* Running tasks must have an assigned agent *)
+  status = RUNNING ⇒ assigned_agent.is_some
+  (* Completed/failed tasks must have both start and end times *)
+  status ∈ {COMPLETED, FAILED} ⇒ start_time.is_some ∧ end_time.is_some
+  (* End time must be after start time *)
+  start_time.is_some ∧ end_time.is_some ⇒ end_time.value ≥ start_time.value
+
+(*=============================================================================
+ * 9P Connection State
+ *============================================================================*)
+
+P9ConnID ::= ℕ
+FID ::= ℕ
+
+schema P9Connection
+  conn_id: P9ConnID
+  peer_address: String
+  authenticated: 𝔹
+  user_name: String
+  open_fids: FID ⇀ String  (* FID to resource path mapping *)
+  max_message_size: ℕ
+where
+  conn_id ≠ 0
+  authenticated ⇒ user_name ≠ ""
+  max_message_size ≥ 8192
+
+(*=============================================================================
+ * Dis VM State
+ *============================================================================*)
+
+ModuleName ::= String
+ThreadID ::= ℕ
+
+schema DisModule
+  name: ModuleName
+  bytecode: seq ℕ
+  loaded: 𝔹
+  atom_handle: AtomHandle option
+where
+  name ≠ ""
+  loaded ⇒ #bytecode > 0
+
+schema DisThread
+  thread_id: ThreadID
+  module: ModuleName
+  program_counter: ℕ
+  status: {READY, RUNNING, BLOCKED, TERMINATED}
+  stack: seq ℕ
+  heap: ℕ ⇀ ℕ
+where
+  thread_id ≠ 0
+  module ≠ ""
+
+(*=============================================================================
+ * Niche Construction State
+ *============================================================================*)
+
+GlyphID ::= ℕ
+SkillID ::= ℕ
+
+schema NicheGlyph
+  id: GlyphID
+  name: String
+  data: seq ℕ
+  intent: AtomHandle
+  success_rate: ℝ
+  usage_count: ℕ
+  energy: ℝ
+  complexity: ℝ
+where
+  id ≠ 0
+  name ≠ ""
+  0 ≤ success_rate ≤ 1
+  energy ≥ 0
+  complexity ≥ 0
+
+schema NicheSkill
+  id: SkillID
+  name: String
+  canonical_glyph: GlyphID
+  intent_type: AtomHandle
+  avg_success_rate: ℝ
+  execution_count: ℕ
+  avg_energy: ℝ
+  context_tags: ℙ String
+where
+  id ≠ 0
+  name ≠ ""
+  0 ≤ avg_success_rate ≤ 1
+  avg_energy ≥ 0
+
+schema NicheConstructionEngine
+  glyphs: GlyphID ⇀ NicheGlyph
+  skills: SkillID ⇀ NicheSkill
+  max_proposal_iterations: ℕ
+  normalization_threshold: ℝ
+  enable_opponent_processing: 𝔹
+  enable_diffusion_generation: 𝔹
+where
+  max_proposal_iterations > 0
+  0 ≤ normalization_threshold ≤ 1
+  (* All skills must reference valid glyphs *)
+  ∀ s: SkillID • s ∈ dom skills ⇒
+    skills(s).canonical_glyph ∈ dom glyphs
+
+(*=============================================================================
+ * Beast Mode State
+ *============================================================================*)
+
+BeastIntensity ::= NORMAL | ELEVATED | HIGH | MAXIMUM | OVERDRIVE
+
+BeastFusionStrategy ::= PARALLEL | SEQUENTIAL | COMPETITIVE | 
+                        COLLABORATIVE | ENSEMBLE
+
+BeastReasonMode ::= FORWARD | BACKWARD | ABDUCTIVE | ANALOGICAL |
+                    PROBABILISTIC | CAUSAL | TEMPORAL | SPATIAL
+
+schema BeastReactor
+  atomspace: AtomSpace
+  pln_engine: PLNEngine
+  niche_engine: NicheConstructionEngine option
+  intensity: BeastIntensity
+  active_modes: ℙ BeastReasonMode
+  max_threads: ℕ
+  sti_boost_factor: ℝ
+  total_inferences: ℕ
+  energy_consumed: ℝ
+where
+  max_threads > 0
+  sti_boost_factor ≥ 1.0
+  total_inferences ≥ 0
+  energy_consumed ≥ 0
+  (* Overdrive mode requires explicit enablement *)
+  intensity = OVERDRIVE ⇒ max_threads ≥ 8
+  (* Energy consumption increases with intensity *)
+  intensity = OVERDRIVE ⇒ energy_consumed > 0
+
+(*=============================================================================
+ * PLN Engine State
+ *============================================================================*)
+
+PLNRule ::= DEDUCTION | MODUS_PONENS | MODUS_TOLLENS | INDUCTION |
+            ABDUCTION | AND | OR | NOT | FORALL_INSTANTIATION |
+            EXISTS_INSTANTIATION | SIMILARITY_SUBSTITUTION
+
+schema PLNEngine
+  atomspace: AtomSpace
+  enabled_rules: ℙ PLNRule
+  rule_weights: PLNRule ⇀ ℝ
+  max_inference_steps: ℕ
+  min_confidence_threshold: ℝ
+  use_attention_allocation: 𝔹
+  inference_cache: (AtomHandle × PLNRule) ⇀ AtomHandle
+  total_inferences: ℕ
+  cache_hits: ℕ
+where
+  max_inference_steps > 0
+  0 ≤ min_confidence_threshold ≤ 1
+  ∀ r: PLNRule • r ∈ enabled_rules ⇒ r ∈ dom rule_weights
+  ∀ r: PLNRule • r ∈ dom rule_weights ⇒ rule_weights(r) ≥ 0
+  total_inferences ≥ 0
+  cache_hits ≤ total_inferences
+
+(*=============================================================================
+ * CogServer State
+ *============================================================================*)
+
+schema CogServer
+  atomspace: AtomSpace
+  agents: AgentID ⇀ Agent
+  tasks: TaskID ⇀ Task
+  agent_thread_pool_size: ℕ
+  active_agents: ℙ AgentID
+  pending_tasks: seq TaskID
+  running_tasks: ℙ TaskID
+where
+  agent_thread_pool_size > 0
+  (* Active agents must exist in agent registry *)
+  active_agents ⊆ dom agents
+  (* Running tasks must exist in task registry *)
+  running_tasks ⊆ dom tasks
+  (* Pending tasks must exist and be in PENDING status *)
+  ∀ tid: TaskID • tid ∈ ran pending_tasks ⇒
+    tid ∈ dom tasks ∧ tasks(tid).status = PENDING
+  (* Running tasks must be in RUNNING status *)
+  ∀ tid: TaskID • tid ∈ running_tasks ⇒
+    tasks(tid).status = RUNNING
+  (* Agent atomspaces are sub-atomspaces *)
+  ∀ aid: AgentID • aid ∈ dom agents ⇒
+    agents(aid).atomspace ∈ atomspace.children
+
+(*=============================================================================
+ * b9/p9/j9 Integration State
+ *============================================================================*)
+
+B9NodeID ::= ℕ
+
+schema B9Node
+  id: B9NodeID
+  node_type: {ATOM_HANDLE, NT_HANDLE, P9_FID, DIS_VALUE}
+  data: ℕ
+  parent: B9NodeID option
+  children: ℙ B9NodeID
+where
+  id ≠ 0
+  (* No self-reference in parent *)
+  parent.is_some ⇒ parent.value ≠ id
+  (* Node cannot be its own child *)
+  id ∉ children
+
+P9ScopeID ::= ℕ
+
+schema P9Scope
+  id: P9ScopeID
+  name: String
+  scope_type: {NT_PROCESS, ATOMSPACE_CONTEXT, P9_NAMESPACE, DIS_MODULE}
+  context_data: ℕ
+  parent: P9ScopeID option
+  children: ℙ P9ScopeID
+  associated_b9_nodes: ℙ B9NodeID
+where
+  id ≠ 0
+  name ≠ ""
+  (* No cycles in parent-child hierarchy *)
+  parent.is_some ⇒ parent.value ≠ id
+  id ∉ children
+
+J9GradientID ::= ℕ
+
+schema J9Gradient
+  id: J9GradientID
+  gradient_type: {INFERENCE_RESULT, P9_CONNECTION, DIS_CHANNEL, AGENT_MESSAGE}
+  source_scope: P9ScopeID
+  dest_scope: P9ScopeID
+  data: ℕ
+  weight: ℝ
+where
+  id ≠ 0
+  source_scope ≠ dest_scope
+  weight ≥ 0
+
+schema UnifiedBridge
+  b9_nodes: B9NodeID ⇀ B9Node
+  p9_scopes: P9ScopeID ⇀ P9Scope
+  j9_gradients: J9GradientID ⇀ J9Gradient
+  atomspace: AtomSpace
+where
+  (* All b9 nodes referenced by p9 scopes must exist *)
+  ∀ sid: P9ScopeID, nid: B9NodeID •
+    sid ∈ dom p9_scopes ∧ nid ∈ p9_scopes(sid).associated_b9_nodes
+    ⇒ nid ∈ dom b9_nodes
+  (* All j9 gradients must reference valid p9 scopes *)
+  ∀ gid: J9GradientID •
+    gid ∈ dom j9_gradients ⇒
+    j9_gradients(gid).source_scope ∈ dom p9_scopes ∧
+    j9_gradients(gid).dest_scope ∈ dom p9_scopes
+  (* No cycles in b9 parent-child relationships *)
+  ∀ nid: B9NodeID • nid ∈ dom b9_nodes ⇒
+    nid ∉ (b9_nodes(nid).parent)*
+  (* No cycles in p9 parent-child relationships *)
+  ∀ sid: P9ScopeID • sid ∈ dom p9_scopes ⇒
+    sid ∉ (p9_scopes(sid).parent)*
+
+(*=============================================================================
+ * Top-Level System State
+ *============================================================================*)
+
+schema CoGWXPSystem
+  state: SystemState
+  atomspace: AtomSpace
+  cogserver: CogServer
+  pln_engine: PLNEngine
+  niche_engine: NicheConstructionEngine option
+  beast_reactor: BeastReactor option
+  p9_connections: P9ConnID ⇀ P9Connection
+  dis_modules: ModuleName ⇀ DisModule
+  dis_threads: ThreadID ⇀ DisThread
+  unified_bridge: UnifiedBridge
+  uptime_ms: ℕ
+  worker_thread_count: ℕ
+  kernel_heap_size: ℕ
+  memory_used: ℕ
+where
+  (* CogServer must use the same atomspace *)
+  cogserver.atomspace = atomspace
+  (* PLN engine must use the same atomspace *)
+  pln_engine.atomspace = atomspace
+  (* Beast reactor (if enabled) must use the same atomspace *)
+  beast_reactor.is_some ⇒ beast_reactor.value.atomspace = atomspace
+  (* Beast reactor (if enabled) must use the PLN engine *)
+  beast_reactor.is_some ⇒ beast_reactor.value.pln_engine = pln_engine
+  (* Beast reactor can integrate with niche engine *)
+  beast_reactor.is_some ∧ niche_engine.is_some ⇒
+    beast_reactor.value.niche_engine = niche_engine
+  (* Unified bridge must use the same atomspace *)
+  unified_bridge.atomspace = atomspace
+  (* Worker threads must be positive *)
+  worker_thread_count > 0
+  (* Memory used cannot exceed heap size *)
+  memory_used ≤ kernel_heap_size
+  (* Running state implies positive uptime *)
+  state = RUNNING ⇒ uptime_ms > 0
+  (* All Dis threads must reference valid modules *)
+  ∀ tid: ThreadID • tid ∈ dom dis_threads ⇒
+    dis_threads(tid).module ∈ dom dis_modules
+  (* All loaded modules must be registered *)
+  ∀ m: ModuleName • m ∈ dom dis_modules ∧ dis_modules(m).loaded ⇒
+    dis_modules(m).atom_handle.is_some
+
+(*=============================================================================
+ * Global System Invariants
+ *============================================================================*)
+
+(* Invariant: Agent consistency *)
+invariant AGENT_CONSISTENCY
+  ∀ sys: CoGWXPSystem, aid: AgentID •
+    aid ∈ dom sys.cogserver.agents ⇒
+    sys.cogserver.agents(aid).atomspace ∈ sys.atomspace.children
+
+(* Invariant: Task assignment consistency *)
+invariant TASK_ASSIGNMENT_CONSISTENCY
+  ∀ sys: CoGWXPSystem, tid: TaskID •
+    tid ∈ dom sys.cogserver.tasks ∧
+    sys.cogserver.tasks(tid).assigned_agent.is_some ⇒
+    sys.cogserver.tasks(tid).assigned_agent.value ∈ dom sys.cogserver.agents
+
+(* Invariant: Attention bank consistency *)
+invariant ATTENTION_BANK_CONSISTENCY
+  ∀ sys: CoGWXPSystem • 
+    sys.state = RUNNING ⇒
+    (∃ ab: AttentionBank • ab.atomspace = sys.atomspace)
+
+(* Invariant: Memory bounds *)
+invariant MEMORY_BOUNDS
+  ∀ sys: CoGWXPSystem •
+    sys.memory_used ≤ sys.kernel_heap_size
+
+(* Invariant: Running tasks have assigned agents *)
+invariant RUNNING_TASKS_HAVE_AGENTS
+  ∀ sys: CoGWXPSystem, tid: TaskID •
+    tid ∈ sys.cogserver.running_tasks ⇒
+    sys.cogserver.tasks(tid).assigned_agent.is_some ∧
+    sys.cogserver.tasks(tid).assigned_agent.value ∈ sys.cogserver.active_agents
+
+(* Invariant: Unified bridge consistency *)
+invariant UNIFIED_BRIDGE_CONSISTENCY
+  ∀ sys: CoGWXPSystem •
+    sys.unified_bridge.atomspace = sys.atomspace
+
+(*=============================================================================
+ * Notes
+ *============================================================================*)
+
+(* This specification formalizes the complete system state of CoGWXP-OS9.
+ * It captures:
+ * - Cognitive services state (CogServer, PLN, Niche Construction, Beast Mode)
+ * - Distributed computing state (9P connections, Dis VM)
+ * - Integration layer state (b9/p9/j9)
+ * - Agent and task management
+ * - Resource utilization and memory management
+ * - Critical system-wide invariants
+ *
+ * The specification is grounded in the actual implementation found in
+ * cogwxp/integration/cogwxp_os.h and related component headers.
+ *)
