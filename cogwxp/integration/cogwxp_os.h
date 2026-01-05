@@ -27,6 +27,10 @@
 /* Integration bridges */
 #include "bridges/unified_bridge.h"
 
+/* Advanced cognitive systems */
+#include "niche_construction.h"
+#include "beast_mode.h"
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -97,6 +101,14 @@ typedef struct cogwxp_config {
     size_t max_b9_nodes;
     size_t max_p9_scopes;
     size_t max_j9_gradients;
+    
+    /* Niche construction configuration */
+    bool enable_niche_construction;
+    niche_config_t niche_config;
+    
+    /* Beast mode configuration */
+    bool enable_beast_mode;
+    beast_config_t beast_config;
 } cogwxp_config_t;
 
 COGUTIL_API cogwxp_config_t cogwxp_config_default(void);
@@ -195,6 +207,16 @@ COGUTIL_API p9_server_t cogwxp_get_9p_server(cogwxp_system_t system);
  * Get the unified bridge
  */
 COGUTIL_API unified_bridge_t cogwxp_get_bridge(cogwxp_system_t system);
+
+/**
+ * Get the niche construction engine
+ */
+COGUTIL_API niche_engine_t cogwxp_get_niche_engine(cogwxp_system_t system);
+
+/**
+ * Get the beast mode reactor
+ */
+COGUTIL_API beast_reactor_t cogwxp_get_beast_reactor(cogwxp_system_t system);
 
 /*===========================================================================
  * High-Level Knowledge Operations

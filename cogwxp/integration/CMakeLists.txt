@@ -115,10 +115,14 @@ set(COGWXP_OS_SOURCES
     cogwxp_b9p9j9.c
     cogwxp_events.c
     cogwxp_stats.c
+    niche_construction.c
+    beast_mode.c
 )
 
 set(COGWXP_OS_HEADERS
     cogwxp_os.h
+    niche_construction.h
+    beast_mode.h
 )
 
 add_library(cogwxp_os ${COGWXP_OS_SOURCES})
