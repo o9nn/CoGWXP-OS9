@@ -79,6 +79,30 @@ typedef double      cog_attention_value_t;
 #define COG_ERROR_EXISTS       -5
 #define COG_ERROR_TIMEOUT      -6
 #define COG_ERROR_PERMISSION   -7
+#define COG_ERROR_IO           -8
+#define COG_ERROR_STATE        -9
+#define COG_ERROR_NOT_IMPLEMENTED -10
+#define COG_ERROR_INVALID_FORMAT  -11
+#define COG_ERROR_DIMENSION_MISMATCH -12
+
+/* Aliases used throughout the codebase */
+#define COG_OK                      COG_SUCCESS
+#define COG_ERROR_INVALID_PARAM     COG_ERROR_INVALID_ARG
+#define COG_ERROR_INVALID_ARGUMENT  COG_ERROR_INVALID_ARG
+#define COG_ERROR_OUT_OF_MEMORY     COG_ERROR_MEMORY
+#define COG_ERROR_INVALID_STATE     COG_ERROR_STATE
+
+/* Convenience memory macros */
+#define COG_MALLOC(size)            malloc(size)
+#define COG_CALLOC(n, size)         calloc(n, size)
+#define COG_REALLOC(ptr, size)      realloc(ptr, size)
+#define COG_FREE(ptr)               free(ptr)
+
+/* Logging macros (file/line-less convenience wrappers) */
+#define COG_LOG_INFO(msg)  cog_log(COG_LOG_INFO,  __FILE__, msg)
+#define COG_LOG_DEBUG(msg) cog_log(COG_LOG_DEBUG, __FILE__, msg)
+#define COG_LOG_WARN(msg)  cog_log(COG_LOG_WARN,  __FILE__, msg)
+#define COG_LOG_ERROR(msg) cog_log(COG_LOG_ERROR, __FILE__, msg)
 
 /*===========================================================================
  * Logging System
@@ -100,11 +124,20 @@ typedef void (*cog_log_callback_t)(
     void* user_data
 );
 
-COGUTIL_API void cog_log_init(void);
-COGUTIL_API void cog_log_shutdown(void);
-COGUTIL_API void cog_log_set_level(cog_log_level_t level);
-COGUTIL_API void cog_log_set_callback(cog_log_callback_t callback, void* user_data);
-COGUTIL_API void cog_log(cog_log_level_t level, const char* module, const char* fmt, ...);
+COGUTIL_API void            cog_log_init(void);
+COGUTIL_API void            cog_log_shutdown(void);
+COGUTIL_API void            cog_log_set_level(cog_log_level_t level);
+COGUTIL_API cog_log_level_t cog_log_get_level(void);
+COGUTIL_API void            cog_log_set_callback(cog_log_callback_t callback, void* user_data);
+COGUTIL_API void            cog_log(cog_log_level_t level, const char* module, const char* fmt, ...);
+
+/*===========================================================================
+ * System Lifecycle
+ *===========================================================================*/
+
+COGUTIL_API cog_result_t cog_init(void);
+COGUTIL_API void         cog_shutdown(void);
+COGUTIL_API const char*  cog_version(void);
 
 /* Convenience macros */
 #define COG_TRACE(module, ...) cog_log(COG_LOG_TRACE, module, __VA_ARGS__)
