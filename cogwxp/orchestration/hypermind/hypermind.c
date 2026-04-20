@@ -775,43 +775,117 @@ COGUTIL_API cog_result_t hm_model_forward(
 
     model->ctx->stats.forward_passes++;
 
-    /* Allocate output tensor */
+    /* Carry activations through each layer */
+    float* current_data = (float*)input->data;
+    size_t current_size = input->size;
+    float* allocated_buf = NULL; /* Intermediate buffer owned by us */
+
+    for (size_t l = 0; l < model->layer_count; l++) {
+        hm_layer_internal_t* layer = &model->layers[l];
+
+        if (layer->type == HM_LAYER_LINEAR &&
+            layer->weights && layer->weight_count > 0) {
+
+            size_t in_features = layer->input_ndim > 0 ?
+                                 layer->input_shape[layer->input_ndim - 1] : current_size;
+            size_t out_features = layer->output_ndim > 0 ?
+                                  layer->output_shape[layer->output_ndim - 1] : layer->bias_count;
+
+            if (in_features == 0 || out_features == 0) {
+                /* Dimensions not set: pass through as identity */
+                continue;
+            }
+
+            /* Cache input for backward pass */
+            free(layer->cached_input);
+            layer->cached_input = malloc(current_size * sizeof(float));
+            if (layer->cached_input) {
+                memcpy(layer->cached_input, current_data, current_size * sizeof(float));
+            }
+
+            size_t batch = current_size / in_features;
+            if (batch == 0) batch = 1;
+
+            float* new_buf = calloc(batch * out_features, sizeof(float));
+            if (!new_buf) {
+                free(allocated_buf);
+                return COG_ERROR_OUT_OF_MEMORY;
+            }
+
+            /* Matrix multiply: out[b, j] = sum_i(in[b, i] * W[i, j]) + bias[j] */
+            for (size_t b = 0; b < batch; b++) {
+                for (size_t j = 0; j < out_features; j++) {
+                    float sum = layer->bias ? layer->bias[j] : 0.0f;
+                    for (size_t i = 0; i < in_features && (b * in_features + i) < current_size; i++) {
+                        size_t w_idx = i * out_features + j;
+                        if (w_idx < layer->weight_count) {
+                            sum += current_data[b * in_features + i] * layer->weights[w_idx];
+                        }
+                    }
+                    /* Apply activation */
+                    new_buf[b * out_features + j] = hm_activation_forward(layer->activation, sum);
+                }
+            }
+
+            /* Cache output for backward pass */
+            free(layer->cached_output);
+            layer->cached_output = malloc(batch * out_features * sizeof(float));
+            if (layer->cached_output) {
+                memcpy(layer->cached_output, new_buf, batch * out_features * sizeof(float));
+            }
+
+            free(allocated_buf);
+            allocated_buf = new_buf;
+            current_data = new_buf;
+            current_size = batch * out_features;
+        } else {
+            /* Non-linear layers: apply element-wise activation */
+            float* new_buf = malloc(current_size * sizeof(float));
+            if (!new_buf) {
+                free(allocated_buf);
+                return COG_ERROR_OUT_OF_MEMORY;
+            }
+
+            for (size_t i = 0; i < current_size; i++) {
+                new_buf[i] = hm_activation_forward(layer->activation, current_data[i]);
+            }
+
+            free(allocated_buf);
+            allocated_buf = new_buf;
+            current_data = new_buf;
+        }
+    }
+
+    /* Build output tensor */
     hm_tensor_t* out = calloc(1, sizeof(hm_tensor_t));
     if (!out) {
+        free(allocated_buf);
         return COG_ERROR_OUT_OF_MEMORY;
     }
 
-    /* For now, simulate forward pass with same shape */
-    out->ndim = input->ndim;
-    out->shape = malloc(input->ndim * sizeof(size_t));
-    memcpy(out->shape, input->shape, input->ndim * sizeof(size_t));
-    out->size = input->size;
+    out->ndim = 1;
+    out->shape = malloc(sizeof(size_t));
+    if (!out->shape) {
+        free(out);
+        free(allocated_buf);
+        return COG_ERROR_OUT_OF_MEMORY;
+    }
+    out->shape[0] = current_size;
+    out->size = current_size;
     out->dtype = input->dtype;
     out->device_id = input->device_id;
     out->requires_grad = input->requires_grad;
 
-    out->data = calloc(out->size, hm_dtype_size(out->dtype));
+    out->data = malloc(current_size * sizeof(float));
     if (!out->data) {
         free(out->shape);
         free(out);
+        free(allocated_buf);
         return COG_ERROR_OUT_OF_MEMORY;
     }
+    memcpy(out->data, current_data, current_size * sizeof(float));
 
-    /* Apply layers (simplified - just copy and apply activation) */
-    float* in_data = (float*)input->data;
-    float* out_data = (float*)out->data;
-
-    for (size_t i = 0; i < out->size; i++) {
-        float val = in_data[i];
-
-        /* Apply final activation if any layer has one */
-        if (model->layer_count > 0) {
-            hm_activation_t act = model->layers[model->layer_count - 1].activation;
-            val = hm_activation_forward(act, val);
-        }
-
-        out_data[i] = val;
-    }
+    free(allocated_buf);
 
     model->ctx->stats.tensor_ops++;
     *output = out;

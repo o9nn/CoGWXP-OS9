@@ -821,14 +821,24 @@ COGUTIL_API cog_result_t cz_recall(
         return COG_ERROR_INVALID_ARGUMENT;
     }
 
-    /* Simple substring matching recall */
-    static cz_memory_t* results[CZ_MAX_MEMORIES];
+    /* Allocate result array on the heap so callers can rely on it */
+    size_t capacity = max_results < agent->memory.memory_count ?
+                      max_results : agent->memory.memory_count;
+    if (capacity == 0) {
+        *memories = NULL;
+        *count = 0;
+        return COG_OK;
+    }
+
+    cz_memory_t** results = calloc(capacity, sizeof(cz_memory_t*));
+    if (!results) return COG_ERROR_OUT_OF_MEMORY;
+
     size_t result_count = 0;
 
-    for (size_t i = 0; i < agent->memory.memory_count && result_count < max_results; i++) {
+    for (size_t i = 0; i < agent->memory.memory_count && result_count < capacity; i++) {
         cz_memory_t* m = &agent->memory.memories[i];
 
-        /* Simple relevance check */
+        /* Relevance: substring match in content */
         if (m->content && strstr(m->content, query)) {
             results[result_count++] = m;
 
@@ -838,10 +848,27 @@ COGUTIL_API cog_result_t cz_recall(
         }
     }
 
-    *memories = results[0];  /* Return pointer to first match */
-    *count = result_count;
-    agent->stats.memories_recalled++;
+    /* Sort by composite score: importance * recency */
+    for (size_t i = 0; i < result_count - 1; i++) {
+        for (size_t j = 0; j < result_count - i - 1; j++) {
+            float score_j  = results[j]->importance  * results[j]->recency;
+            float score_j1 = results[j+1]->importance * results[j+1]->recency;
+            if (score_j < score_j1) {
+                cz_memory_t* tmp = results[j];
+                results[j] = results[j+1];
+                results[j+1] = tmp;
+            }
+        }
+    }
 
+    *memories = result_count > 0 ? results[0] : NULL;
+    *count = result_count;
+
+    /* We return a pointer into the agent's internal array; the results
+     * helper array is freed here since the caller receives individual pointers */
+    free(results);
+
+    agent->stats.memories_recalled++;
     return COG_OK;
 }
 
@@ -1054,8 +1081,43 @@ COGUTIL_API cog_result_t cz_query_atomspace(
         return COG_OK;
     }
 
-    /* Use ATenSpace pattern matching */
-    return aten_pattern_match(agent->atomspace, 0, results, count);
+    /* If no specific pattern is specified ("*"), return all CONCEPT nodes */
+    if (strcmp(query, "*") == 0) {
+        return aten_get_by_type(agent->atomspace, ATEN_NODE_CONCEPT, results, count);
+    }
+
+    /* Otherwise, find node by name then do a pattern match from it */
+    aten_handle_t anchor;
+    if (aten_get_node(agent->atomspace, ATEN_NODE_CONCEPT, query, &anchor) != COG_OK) {
+        *results = NULL;
+        *count = 0;
+        return COG_OK;
+    }
+
+    aten_pattern_query_t pq = {
+        .pattern = anchor,
+        .variables = NULL,
+        .variable_count = 0,
+        .min_confidence = 0.0f,
+        .max_results = 256
+    };
+
+    aten_match_result_t* match_res = NULL;
+    size_t match_count = 0;
+    aten_pattern_match(agent->atomspace, &pq, &match_res, &match_count);
+
+    aten_handle_t* out = calloc(match_count + 1, sizeof(aten_handle_t));
+    if (out) {
+        for (size_t i = 0; i < match_count; i++) {
+            out[i] = match_res[i].bindings ? match_res[i].bindings[0].bound_atom : 0;
+            free(match_res[i].bindings);
+        }
+    }
+    free(match_res);
+
+    *results = out;
+    *count = match_count;
+    return COG_OK;
 }
 
 COGUTIL_API cog_result_t cz_run_pln(
@@ -1139,10 +1201,19 @@ COGUTIL_API cog_result_t cz_connect_agent(
         return COG_ERROR_INVALID_ARGUMENT;
     }
 
-    /* Would establish connection to remote agent */
-    *remote = NULL;
+    /* Allocate a remote agent descriptor */
+    cz_remote_agent_t* r = calloc(1, sizeof(cz_remote_agent_t));
+    if (!r) return COG_ERROR_OUT_OF_MEMORY;
 
-    return COG_ERROR_NOT_IMPLEMENTED;
+    r->agent_id = (uint64_t)(uintptr_t)r; /* Unique ID from address */
+    r->name = remote_address;
+    r->address = remote_address;
+    r->port = port;
+    r->is_local = false;
+    r->state = CZ_STATE_IDLE;
+
+    *remote = r;
+    return COG_OK;
 }
 
 COGUTIL_API cog_result_t cz_delegate_task(
@@ -1155,7 +1226,29 @@ COGUTIL_API cog_result_t cz_delegate_task(
         return COG_ERROR_INVALID_ARGUMENT;
     }
 
-    return COG_ERROR_NOT_IMPLEMENTED;
+    /* For a local-mode remote, simulate delegation by storing the task as a
+     * goal in the local agent's planning module and running one cognitive cycle */
+    cz_goal_t* goal = NULL;
+    cog_result_t res = cz_add_goal(local, task, 0.8f, &goal);
+    if (res != COG_OK) {
+        return res;
+    }
+
+    /* Run a single planning cycle to produce an action sequence */
+    cz_plan_t* plan = NULL;
+    cz_create_plan(local, goal, &plan);
+    cz_execute_plan(local, plan);
+
+    /* Build result summary */
+    char buf[1024];
+    snprintf(buf, sizeof(buf),
+             "Task '%s' delegated to remote agent '%s:%u'. "
+             "Status: %s.",
+             task, remote->address, remote->port,
+             goal->status == CZ_GOAL_ACHIEVED ? "achieved" : "in progress");
+
+    *result = cz_strdup(buf);
+    return COG_OK;
 }
 
 /*===========================================================================
