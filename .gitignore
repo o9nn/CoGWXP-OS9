@@ -6,12 +6,11 @@
 *.dll
 *.dylib
 
-# Executables
-test_niche_beast
-test_cogwxp
-cogwxp-tests
-cogwxp-osd
-cogwxp
+# Executables (root-level only, not the cogwxp/ source directory)
+/test_niche_beast
+/test_cogwxp
+/cogwxp-tests
+/cogwxp-osd
 
 # CMake
 CMakeFiles/

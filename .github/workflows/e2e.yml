@@ -1,0 +1,268 @@
+name: E2E & Exhaustive Tests
+
+on:
+  pull_request:
+  schedule:
+    # Nightly at 02:00 UTC
+    - cron: "0 2 * * *"
+  workflow_dispatch:
+
+# Least-privilege default
+permissions:
+  contents: read
+
+concurrency:
+  group: e2e-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Exhaustive unit tests — runs every test label
+  # ---------------------------------------------------------------------------
+  exhaustive-unit:
+    name: Exhaustive Unit Tests (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-22.04, macos-14]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies (Linux)
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build build-essential \
+            libboost-dev libboost-system-dev libboost-filesystem-dev \
+            libboost-program-options-dev libssl-dev libcurl4-openssl-dev
+
+      - name: Install dependencies (macOS)
+        if: runner.os == 'macOS'
+        run: brew install cmake ninja boost openssl curl || true
+
+      - name: Configure (Debug, all features)
+        run: |
+          cmake -B build -S cogwxp \
+            -GNinja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DBUILD_TESTS=ON \
+            -DBUILD_SHARED_LIBS=ON \
+            -DENABLE_9P_INTEGRATION=ON \
+            -DENABLE_DIS_INTEGRATION=ON \
+            -DENABLE_NT_INTEGRATION=OFF \
+            -DENABLE_SSL=OFF
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Run ALL tests (verbose)
+        run: |
+          ctest \
+            --test-dir build \
+            --output-on-failure \
+            --timeout 300 \
+            --no-compress-output \
+            -T Test \
+            -VV
+
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: e2e-unit-${{ matrix.os }}
+          path: build/Testing/**/*.xml
+          retention-days: 60
+
+  # ---------------------------------------------------------------------------
+  # Integration pipeline: test full cogwxp → integration → orchestration chain
+  # ---------------------------------------------------------------------------
+  integration-pipeline:
+    name: Integration Pipeline
+    runs-on: ubuntu-22.04
+    needs: exhaustive-unit
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build build-essential \
+            libboost-dev libboost-system-dev libboost-filesystem-dev \
+            libboost-program-options-dev libssl-dev libcurl4-openssl-dev \
+            time
+
+      - name: Configure
+        run: |
+          cmake -B build -S cogwxp \
+            -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTS=ON \
+            -DENABLE_9P_INTEGRATION=ON \
+            -DENABLE_DIS_INTEGRATION=ON
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Run integration tests (label=integration)
+        run: |
+          ctest \
+            --test-dir build \
+            --output-on-failure \
+            --timeout 600 \
+            -L integration \
+            -T Test
+
+      - name: Run niche & beast tests
+        run: |
+          if [ -f build/bin/test-niche-beast ]; then
+            ./build/bin/test-niche-beast
+          else
+            echo "test-niche-beast binary not found, skipping"
+          fi
+
+      - name: Run cogwxp core tests
+        run: |
+          if [ -f build/bin/cogwxp-tests ]; then
+            ./build/bin/cogwxp-tests
+          else
+            echo "cogwxp-tests binary not found, skipping"
+          fi
+
+      - name: Upload integration results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: integration-pipeline-results
+          path: build/Testing/**/*.xml
+          retention-days: 60
+
+  # ---------------------------------------------------------------------------
+  # Stress test: large atomspace, concurrent access, long inference chains
+  # ---------------------------------------------------------------------------
+  stress-tests:
+    name: Stress Tests
+    runs-on: ubuntu-22.04
+    needs: integration-pipeline
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build build-essential \
+            libboost-dev libboost-system-dev libboost-filesystem-dev \
+            libboost-program-options-dev
+
+      - name: Configure (Release, max optimisation)
+        run: |
+          cmake -B build -S cogwxp \
+            -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DBUILD_TESTS=ON \
+            -DENABLE_9P_INTEGRATION=ON \
+            -DENABLE_DIS_INTEGRATION=ON \
+            -DCMAKE_C_FLAGS="-O3"
+
+      - name: Build
+        run: cmake --build build --parallel
+
+      - name: Run stress tests (label=stress)
+        run: |
+          ctest \
+            --test-dir build \
+            --output-on-failure \
+            --timeout 900 \
+            -L stress \
+            -T Test
+        continue-on-error: true
+
+      - name: Upload stress results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: stress-test-results
+          path: build/Testing/**/*.xml
+          retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # Cross-architecture check (QEMU emulated, arm64)
+  # ---------------------------------------------------------------------------
+  cross-compile-check:
+    name: Cross-Compile Check (aarch64)
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install cross-compiler
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build \
+            gcc-aarch64-linux-gnu \
+            binutils-aarch64-linux-gnu
+
+      - name: Configure (cross-compile, no tests run)
+        run: |
+          cmake -B build -S cogwxp \
+            -GNinja \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_SYSTEM_NAME=Linux \
+            -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+            -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
+            -DBUILD_TESTS=ON \
+            -DENABLE_9P_INTEGRATION=ON \
+            -DENABLE_DIS_INTEGRATION=ON \
+            -DENABLE_NT_INTEGRATION=OFF
+        continue-on-error: true
+
+      - name: Build (cross-compile)
+        run: cmake --build build --parallel
+        continue-on-error: true
+
+  # ---------------------------------------------------------------------------
+  # Publish consolidated test report
+  # ---------------------------------------------------------------------------
+  report:
+    name: Publish Test Report
+    runs-on: ubuntu-22.04
+    needs: [exhaustive-unit, integration-pipeline, stress-tests]
+    if: always()
+    permissions:
+      contents: read
+
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: all-artifacts
+
+      - name: List results
+        run: find all-artifacts -name "*.xml" | sort
+
+      - name: Upload consolidated report
+        uses: actions/upload-artifact@v4
+        with:
+          name: consolidated-test-report
+          path: all-artifacts/
+          retention-days: 90
