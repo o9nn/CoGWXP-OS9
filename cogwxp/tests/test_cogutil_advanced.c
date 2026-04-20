@@ -80,12 +80,16 @@ static void test_rwlock_lifecycle(void) {
     cog_rwlock_t rw = cog_rwlock_create();
     TEST_ASSERT(rw != NULL, "RWLock created");
 
-    /* Multiple concurrent readers (single-threaded simulation) */
-    cog_rwlock_read_lock(rw);
+    /*
+     * Single-thread read-lock re-entrance: acquire two read locks sequentially
+     * (both are unlocked between each other to avoid implementation-specific
+     * behaviour around recursive read-locking).
+     */
     cog_rwlock_read_lock(rw);
     cog_rwlock_read_unlock(rw);
+    cog_rwlock_read_lock(rw);
     cog_rwlock_read_unlock(rw);
-    TEST_ASSERT(1, "Two read locks / unlocks without crash");
+    TEST_ASSERT(1, "Two sequential read lock/unlock cycles succeed");
 
     /* Write lock */
     cog_rwlock_write_lock(rw);

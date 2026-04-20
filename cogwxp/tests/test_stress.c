@@ -227,10 +227,12 @@ static void test_threadpool_1000_tasks(void) {
     TEST_ASSERT(pool != NULL, "Thread pool created");
 
     const int NTASKS = 1000;
+    int submit_failures = 0;
     for (int i = 0; i < NTASKS; i++) {
         cog_result_t r = cog_threadpool_submit(pool, pool_increment, NULL);
-        TEST_ASSERT(r == COG_SUCCESS, "Task submit returns COG_SUCCESS");
+        if (r != COG_SUCCESS) submit_failures++;
     }
+    TEST_ASSERT(submit_failures == 0, "All 1 000 task submissions succeeded");
 
     /* Wait for completion */
     cog_sleep_ms(500);

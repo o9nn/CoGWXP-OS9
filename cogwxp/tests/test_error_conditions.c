@@ -286,9 +286,16 @@ static void test_pln_get_applicable_rules_invalid(void) {
 
     size_t count = 0;
     atom_handle_t* rules = pln_get_applicable_rules(pln, ATOM_HANDLE_INVALID, &count);
-    TEST_ASSERT(count == 0 || rules != NULL || 1,
-                "get_applicable_rules(INVALID) does not crash");
-    if (rules) atomspace_query_results_free(rules);
+
+    if (count > 0) {
+        /* If count is positive, rules pointer must be non-NULL */
+        TEST_ASSERT(rules != NULL,
+                    "get_applicable_rules: if count>0 then rules must be non-NULL");
+        atomspace_query_results_free(rules);
+    } else {
+        TEST_ASSERT(count == 0,
+                    "get_applicable_rules(INVALID): count should be 0");
+    }
 
     pln_engine_destroy(pln);
     atomspace_destroy(as);

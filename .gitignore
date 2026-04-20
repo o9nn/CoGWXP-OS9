@@ -11,7 +11,6 @@
 /test_cogwxp
 /cogwxp-tests
 /cogwxp-osd
-/cogwxp-binary
 
 # CMake
 CMakeFiles/

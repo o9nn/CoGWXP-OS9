@@ -7,6 +7,10 @@ on:
     - cron: "0 2 * * *"
   workflow_dispatch:
 
+# Least-privilege default
+permissions:
+  contents: read
+
 concurrency:
   group: e2e-${{ github.ref }}
   cancel-in-progress: true
@@ -18,6 +22,8 @@ jobs:
   exhaustive-unit:
     name: Exhaustive Unit Tests (${{ matrix.os }})
     runs-on: ${{ matrix.os }}
+    permissions:
+      contents: read
 
     strategy:
       fail-fast: false
@@ -81,6 +87,8 @@ jobs:
     name: Integration Pipeline
     runs-on: ubuntu-22.04
     needs: exhaustive-unit
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -147,6 +155,8 @@ jobs:
     name: Stress Tests
     runs-on: ubuntu-22.04
     needs: integration-pipeline
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -197,6 +207,8 @@ jobs:
   cross-compile-check:
     name: Cross-Compile Check (aarch64)
     runs-on: ubuntu-22.04
+    permissions:
+      contents: read
 
     steps:
       - name: Checkout
@@ -236,6 +248,8 @@ jobs:
     runs-on: ubuntu-22.04
     needs: [exhaustive-unit, integration-pipeline, stress-tests]
     if: always()
+    permissions:
+      contents: read
 
     steps:
       - name: Download all artifacts
