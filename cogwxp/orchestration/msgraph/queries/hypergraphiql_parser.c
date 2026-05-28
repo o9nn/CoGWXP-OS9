@@ -8,6 +8,7 @@
  * @copyright CoGWXP-OS9 Project
  */
 
+#define _HGQL_INTERNAL
 #include "hypergraphiql.h"
 #include <stdlib.h>
 #include <string.h>
@@ -167,20 +168,7 @@ typedef struct ast_node {
  * Document Structure
  *===========================================================================*/
 
-struct hgql_document {
-    ast_node_t* root;
-    
-    /* Fragment definitions */
-    ast_node_t** fragments;
-    size_t fragment_count;
-    
-    /* Operations */
-    ast_node_t** operations;
-    size_t operation_count;
-    
-    /* Source text */
-    char* source;
-};
+/* hgql_document struct is defined in hypergraphiql.h */
 
 /*===========================================================================
  * Lexer Implementation

@@ -20,7 +20,7 @@
 #ifndef _COGWXP_HYPERGRAPHIQL_H_
 #define _COGWXP_HYPERGRAPHIQL_H_
 
-#include "../../opencog/atomspace/atomspace.h"
+#include "../../../opencog/atomspace/atomspace.h"
 #include "../atomspace/ms_hypergraph.h"
 
 #ifdef __cplusplus
@@ -112,6 +112,19 @@ typedef enum {
  * Parsed query document
  */
 typedef struct hgql_document* hgql_document_t;
+
+#ifdef _HGQL_INTERNAL
+/* Full struct definition for internal implementation files */
+struct ast_node;  /* forward declaration */
+struct hgql_document {
+    struct ast_node* root;
+    struct ast_node** fragments;
+    size_t fragment_count;
+    struct ast_node** operations;
+    size_t operation_count;
+    char* source;
+};
+#endif
 
 /**
  * Query operation

@@ -54,8 +54,8 @@ static void test_cogutil_null_log(void) {
     printf("\n=== CogUtil: NULL/empty log messages ===\n");
 
     /* Empty format string must not crash */
-    TEST_NO_CRASH(cog_log(COG_LOG_INFO, "test", ""), "cog_log with empty string");
-    TEST_NO_CRASH(cog_log(COG_LOG_ERROR, NULL, "msg"), "cog_log with NULL module");
+    TEST_NO_CRASH(cog_log(COG_LOG_INFO, __FILE__, __LINE__, __func__, ""), "cog_log with empty string");
+    TEST_NO_CRASH(cog_log(COG_LOG_ERROR, NULL, 0, NULL, "msg"), "cog_log with NULL module");
 }
 
 static void test_cogutil_zero_alloc(void) {
@@ -324,12 +324,13 @@ static void test_stats_null_output(void) {
 static void test_config_missing_key(void) {
     printf("\n=== CogUtil Config: Get missing keys return defaults ===\n");
 
-    cog_config_t cfg = cog_config_create();
+    cog_config_t* cfg;
+    cog_config_create(&cfg);
 
     const char* s = cog_config_get_string(cfg, "no.such.key", "default_str");
     TEST_ASSERT(strcmp(s, "default_str") == 0, "Missing string key returns default");
 
-    int64_t i = cog_config_get_int(cfg, "no.such.int", -99);
+    int i = cog_config_get_int(cfg, "no.such.int", -99);
     TEST_ASSERT(i == -99, "Missing int key returns default");
 
     double d = cog_config_get_float(cfg, "no.such.float", 3.14);
