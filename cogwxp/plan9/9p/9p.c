@@ -8,7 +8,9 @@
  * @copyright CoGWXP-OS9 Project
  */
 
+#define _P9_INTERNAL
 #include "9p.h"
+#include "../../opencog/atomspace/atomspace.h"
 #include "../../opencog/cogutil/cogutil.h"
 #include <stdlib.h>
 #include <string.h>
@@ -29,38 +31,6 @@
 #define P9_IOHDRSZ  24
 #define P9_MAXWELEM 16
 
-/* 9P message types */
-typedef enum {
-    P9_TVERSION = 100,
-    P9_RVERSION = 101,
-    P9_TAUTH    = 102,
-    P9_RAUTH    = 103,
-    P9_TATTACH  = 104,
-    P9_RATTACH  = 105,
-    P9_TERROR   = 106,  /* Illegal */
-    P9_RERROR   = 107,
-    P9_TFLUSH   = 108,
-    P9_RFLUSH   = 109,
-    P9_TWALK    = 110,
-    P9_RWALK    = 111,
-    P9_TOPEN    = 112,
-    P9_ROPEN    = 113,
-    P9_TCREATE  = 114,
-    P9_RCREATE  = 115,
-    P9_TREAD    = 116,
-    P9_RREAD    = 117,
-    P9_TWRITE   = 118,
-    P9_RWRITE   = 119,
-    P9_TCLUNK   = 120,
-    P9_RCLUNK   = 121,
-    P9_TREMOVE  = 122,
-    P9_RREMOVE  = 123,
-    P9_TSTAT    = 124,
-    P9_RSTAT    = 125,
-    P9_TWSTAT   = 126,
-    P9_RWSTAT   = 127
-} p9_msg_type_t;
-
 /* QID types */
 #define P9_QTDIR    0x80
 #define P9_QTAPPEND 0x40
@@ -73,13 +43,6 @@ typedef enum {
 /*===========================================================================
  * Internal Structures
  *===========================================================================*/
-
-/* QID - unique identifier for a file */
-typedef struct {
-    uint8_t type;
-    uint32_t version;
-    uint64_t path;
-} p9_qid_t;
 
 /* File information */
 typedef struct p9_file {
@@ -171,6 +134,7 @@ struct p9_server {
     } stats;
     pthread_mutex_t stats_lock;
 };
+typedef struct p9_server p9_server_t;
 
 /*===========================================================================
  * Message Encoding/Decoding

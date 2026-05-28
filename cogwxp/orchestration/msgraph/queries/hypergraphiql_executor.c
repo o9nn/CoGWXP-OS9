@@ -7,15 +7,12 @@
  * @copyright CoGWXP-OS9 Project
  */
 
+#define _HGQL_INTERNAL
 #include "hypergraphiql.h"
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
-
-/*===========================================================================
- * Internal Structures
- *===========================================================================*/
 
 /* JSON builder for results */
 typedef struct {

@@ -12,6 +12,7 @@
 #define _COGWXP_9P_H_
 
 #include "../../opencog/cogutil/cogutil.h"
+#include <sys/types.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -148,9 +149,44 @@ typedef struct p9_callbacks {
 } p9_callbacks_t;
 
 /*===========================================================================
+ * 9P Cognitive Extension Types
+ *===========================================================================*/
+
+/* Forward declare atomspace_t (defined in atomspace.h) */
+struct atomspace;
+#ifndef ATOMSPACE_T_DEFINED
+#define ATOMSPACE_T_DEFINED
+typedef struct atomspace* atomspace_t;
+#endif
+
+/* Cognitive file type for AtomSpace integration */
+typedef enum {
+    P9_COG_NONE = 0,
+    P9_COG_ATOMSPACE,
+    P9_COG_TYPES,
+    P9_COG_QUERY,
+    P9_COG_CTL
+} p9_cog_file_type_t;
+
+/* Cognitive handler callback */
+typedef void (*p9_cog_handler_t)(void* data);
+
+/* 9P request/response (opaque) */
+typedef struct p9_request* p9_request_t;
+typedef struct p9_response* p9_response_t;
+
+/*===========================================================================
  * 9P Server
  *===========================================================================*/
 
+/* Server configuration (used by internal implementation) */
+typedef struct {
+    uint16_t port;
+    uint32_t msize;
+    bool enable_tls;
+} p9_server_config_t;
+
+#ifndef _P9_INTERNAL
 typedef struct p9_server* p9_server_t;
 
 COGUTIL_API p9_server_t p9_server_create(p9_callbacks_t* callbacks);
@@ -158,6 +194,7 @@ COGUTIL_API void        p9_server_destroy(p9_server_t server);
 COGUTIL_API cog_result_t p9_server_listen(p9_server_t server, const char* address, uint16_t port);
 COGUTIL_API cog_result_t p9_server_listen_unix(p9_server_t server, const char* path);
 COGUTIL_API void        p9_server_stop(p9_server_t server);
+#endif /* _P9_INTERNAL */
 
 /* Response helpers */
 COGUTIL_API cog_result_t p9_respond_error(p9_conn_t conn, uint16_t tag, const char* error);
@@ -172,7 +209,11 @@ COGUTIL_API cog_result_t p9_respond_create(p9_conn_t conn, uint16_t tag, p9_qid_
  * 9P Client
  *===========================================================================*/
 
+#ifndef _P9_INTERNAL
 typedef struct p9_client* p9_client_t;
+#endif
+
+#ifndef _P9_INTERNAL
 
 COGUTIL_API p9_client_t p9_client_create(void);
 COGUTIL_API void        p9_client_destroy(p9_client_t client);
@@ -217,6 +258,8 @@ COGUTIL_API void        p9_closedir(p9_dir_t dir);
 COGUTIL_API p9_stat_t*  p9_readdir(p9_dir_t dir);
 COGUTIL_API void        p9_rewinddir(p9_dir_t dir);
 
+#endif /* _P9_INTERNAL */
+
 /*===========================================================================
  * 9P Namespace Operations
  *===========================================================================*/
@@ -226,7 +269,9 @@ typedef struct p9_namespace* p9_namespace_t;
 COGUTIL_API p9_namespace_t p9_namespace_create(void);
 COGUTIL_API void           p9_namespace_destroy(p9_namespace_t ns);
 COGUTIL_API cog_result_t   p9_namespace_bind(p9_namespace_t ns, const char* name, const char* old, int flags);
+#ifndef _P9_INTERNAL
 COGUTIL_API cog_result_t   p9_namespace_mount(p9_namespace_t ns, p9_client_t client, const char* mountpoint);
+#endif
 COGUTIL_API cog_result_t   p9_namespace_unmount(p9_namespace_t ns, const char* mountpoint);
 
 /* Bind flags */

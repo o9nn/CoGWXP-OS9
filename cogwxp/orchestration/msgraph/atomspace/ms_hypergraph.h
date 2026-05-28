@@ -16,8 +16,8 @@
 #ifndef _COGWXP_MS_HYPERGRAPH_H_
 #define _COGWXP_MS_HYPERGRAPH_H_
 
-#include "../../opencog/atomspace/atomspace.h"
-#include "../../opencog/cogutil/cogutil.h"
+#include "../../../opencog/atomspace/atomspace.h"
+#include "../../../opencog/cogutil/cogutil.h"
 
 #ifdef __cplusplus
 extern "C" {

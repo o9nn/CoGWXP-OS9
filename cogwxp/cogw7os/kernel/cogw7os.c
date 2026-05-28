@@ -8,6 +8,7 @@
  * @copyright CoGWXP-OS9 Project
  */
 
+#define _COGW7_INTERNAL
 #include "cogw7os.h"
 #include "../../opencog/cogutil/cogutil.h"
 #include "../../opencog/atomspace/atomspace.h"
@@ -217,8 +218,8 @@ COGUTIL_API cog_result_t cogw7_kernel_create(
     pthread_mutex_init(&k->state_lock, NULL);
     
     /* Create AtomSpace */
-    atomspace_config_t as_config = {0};
-    cog_result_t result = atomspace_create(&as_config, &k->atomspace);
+    k->atomspace = atomspace_create();
+    cog_result_t result = k->atomspace ? COG_OK : COG_ERROR_MEMORY;
     if (result != COG_OK) {
         COG_FREE(k);
         return result;
@@ -226,13 +227,11 @@ COGUTIL_API cog_result_t cogw7_kernel_create(
     
     /* Create PLN context */
     pln_config_t pln_config = {
-        .k = 800.0,
-        .max_chain_depth = 10,
-        .confidence_threshold = 0.1,
-        .enable_backward_chaining = true,
-        .enable_forward_chaining = true
+        .max_inference_steps = 10,
+        .min_confidence_threshold = 0.1
     };
-    result = pln_init(k->atomspace, &pln_config, &k->pln);
+    k->pln = pln_engine_create(k->atomspace, &pln_config);
+    result = k->pln ? COG_OK : COG_ERROR_MEMORY;
     if (result != COG_OK) {
         atomspace_destroy(k->atomspace);
         COG_FREE(k);
@@ -339,7 +338,7 @@ COGUTIL_API cog_result_t cogw7_kernel_boot(cogw7_kernel_t kernel) {
     
     /* Create kernel process atom */
     kernel_proc->process_atom = atomspace_add_node(kernel->atomspace,
-        ATOM_TYPE_CONCEPT, "System", NULL);
+        ATOM_TYPE_CONCEPT_NODE, "System");
     
     pthread_rwlock_wrlock(&kernel->process_lock);
     kernel->processes[0] = kernel_proc;
@@ -471,7 +470,7 @@ COGUTIL_API cog_result_t cogw7_process_create(
     
     /* Create process atom in AtomSpace */
     proc->process_atom = atomspace_add_node(kernel->atomspace,
-        ATOM_TYPE_CONCEPT, name, NULL);
+        ATOM_TYPE_CONCEPT_NODE, name);
     
     /* Link to parent */
     if (parent_pid > 0 && parent_pid < COGW7_MAX_PROCESSES && 
@@ -480,8 +479,8 @@ COGUTIL_API cog_result_t cogw7_process_create(
             kernel->processes[parent_pid]->process_atom,
             proc->process_atom
         };
-        atomspace_add_link(kernel->atomspace, ATOM_TYPE_INHERITANCE,
-            parent_link, 2, NULL);
+        atomspace_add_link(kernel->atomspace, ATOM_TYPE_INHERITANCE_LINK,
+            parent_link, 2);
     }
     
     kernel->processes[new_pid] = proc;
@@ -624,7 +623,7 @@ COGUTIL_API cog_result_t cogw7_thread_create(
     char thread_name[64];
     snprintf(thread_name, sizeof(thread_name), "Thread_%u_%u", pid, thread->tid);
     thread->context_atom = atomspace_add_node(kernel->atomspace,
-        ATOM_TYPE_CONCEPT, thread_name, NULL);
+        ATOM_TYPE_CONCEPT_NODE, thread_name);
     
     /* Add to process thread list */
     pthread_mutex_lock(&proc->lock);
@@ -760,27 +759,29 @@ static void* reasoning_loop(void* arg) {
         }
         
         /* 2. Run forward chaining on active atoms */
-        atom_handle_t* conclusions = NULL;
         size_t conclusion_count = 0;
         
         /* Get atoms in attentional focus */
         atom_handle_t* focus_atoms = NULL;
         size_t focus_count = 0;
-        atomspace_get_atoms_by_type(kernel->atomspace, ATOM_TYPE_CONCEPT,
-            false, &focus_atoms, &focus_count);
+        atom_query_t q = atomspace_query_create(kernel->atomspace);
+        if (q) {
+            atomspace_query_type(q, ATOM_TYPE_CONCEPT_NODE);
+            atomspace_query_av_min(q, 1);
+            focus_atoms = atomspace_query_execute(q, &focus_count);
+            atomspace_query_destroy(q);
+        }
         
         for (size_t i = 0; i < focus_count && i < 10; i++) {
-            attention_value_t av;
-            if (atomspace_get_av(kernel->atomspace, focus_atoms[i], &av) == COG_OK) {
-                if (av.sti > 0) {
-                    pln_forward_chain(kernel->pln, focus_atoms[i], 5,
-                        &conclusions, &conclusion_count);
-                    COG_FREE(conclusions);
-                }
+            forward_chain_result_t* fc_result = pln_forward_chain(
+                kernel->pln, focus_atoms[i], 5);
+            if (fc_result) {
+                conclusion_count += fc_result->derived_count;
+                pln_forward_chain_result_free(fc_result);
             }
         }
         
-        COG_FREE(focus_atoms);
+        if (focus_atoms) atomspace_query_results_free(focus_atoms);
         
         /* Update stats */
         pthread_mutex_lock(&kernel->stats_lock);
@@ -865,7 +866,7 @@ COGUTIL_API cog_result_t cogw7_service_start(
     
     /* Create service atom */
     svc->service_atom = atomspace_add_node(kernel->atomspace,
-        ATOM_TYPE_CONCEPT, svc->name, NULL);
+        ATOM_TYPE_CONCEPT_NODE, svc->name);
     
     pthread_rwlock_unlock(&kernel->service_lock);
     

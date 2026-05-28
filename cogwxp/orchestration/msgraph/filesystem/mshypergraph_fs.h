@@ -38,7 +38,7 @@
 #ifndef _COGWXP_MSHYPERGRAPH_FS_H_
 #define _COGWXP_MSHYPERGRAPH_FS_H_
 
-#include "../../plan9/9p/9p.h"
+#include "../../../plan9/9p/9p.h"
 #include "../atomspace/ms_hypergraph.h"
 
 #ifdef __cplusplus

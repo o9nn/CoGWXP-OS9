@@ -18,6 +18,7 @@ extern "C" {
 #include <stdint.h>
 #include <stddef.h>
 #include <stdbool.h>
+#include <stdio.h>
 
 /*===========================================================================
  * Version Information
@@ -65,7 +66,6 @@ extern "C" {
  *===========================================================================*/
 
 typedef uint64_t    cog_handle_t;
-typedef uint64_t    cog_uuid_t;
 typedef int32_t     cog_result_t;
 typedef double      cog_truth_value_t;
 typedef double      cog_attention_value_t;
@@ -84,6 +84,13 @@ typedef double      cog_attention_value_t;
 #define COG_ERROR_NOT_IMPLEMENTED -10
 #define COG_ERROR_INVALID_FORMAT  -11
 #define COG_ERROR_DIMENSION_MISMATCH -12
+#define COG_ERROR_NETWORK       -13
+#define COG_ERROR_AUTH          -14
+#define COG_ERROR_PARSE         -15
+#define COG_ERROR_CONFIG        -16
+#define COG_ERROR_INIT          -17
+#define COG_ERROR_EMPTY         -18
+#define COG_ERROR_EXEC          -19
 
 /* Aliases used throughout the codebase */
 #define COG_OK                      COG_SUCCESS
@@ -97,12 +104,16 @@ typedef double      cog_attention_value_t;
 #define COG_CALLOC(n, size)         calloc(n, size)
 #define COG_REALLOC(ptr, size)      realloc(ptr, size)
 #define COG_FREE(ptr)               free(ptr)
+#define COG_STRDUP(s)               cog_strdup(s)
 
-/* Logging macros (file/line-less convenience wrappers) */
-#define COG_LOG_INFO(msg)  cog_log(COG_LOG_INFO,  __FILE__, msg)
-#define COG_LOG_DEBUG(msg) cog_log(COG_LOG_DEBUG, __FILE__, msg)
-#define COG_LOG_WARN(msg)  cog_log(COG_LOG_WARN,  __FILE__, msg)
-#define COG_LOG_ERROR(msg) cog_log(COG_LOG_ERROR, __FILE__, msg)
+/* Version string alias */
+#define COGUTIL_VERSION             COGUTIL_VERSION_STRING
+
+/* Logging macros with file/line/func context */
+#define COG_LOG_INFO(fmt, ...)  cog_log(COG_LOG_INFO,  __FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__)
+#define COG_LOG_DEBUG(fmt, ...) cog_log(COG_LOG_DEBUG, __FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__)
+#define COG_LOG_WARN(fmt, ...)  cog_log(COG_LOG_WARN,  __FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__)
+#define COG_LOG_ERROR(fmt, ...) cog_log(COG_LOG_ERROR, __FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__)
 
 /*===========================================================================
  * Logging System
@@ -119,7 +130,9 @@ typedef enum {
 
 typedef void (*cog_log_callback_t)(
     cog_log_level_t level,
-    const char* module,
+    const char* file,
+    int line,
+    const char* func,
     const char* message,
     void* user_data
 );
@@ -129,7 +142,9 @@ COGUTIL_API void            cog_log_shutdown(void);
 COGUTIL_API void            cog_log_set_level(cog_log_level_t level);
 COGUTIL_API cog_log_level_t cog_log_get_level(void);
 COGUTIL_API void            cog_log_set_callback(cog_log_callback_t callback, void* user_data);
-COGUTIL_API void            cog_log(cog_log_level_t level, const char* module, const char* fmt, ...);
+COGUTIL_API void            cog_log_set_file(FILE* file);
+COGUTIL_API void            cog_log_set_options(bool timestamps, bool colors);
+COGUTIL_API void            cog_log(cog_log_level_t level, const char* file, int line, const char* func, const char* fmt, ...);
 
 /*===========================================================================
  * System Lifecycle
@@ -139,13 +154,13 @@ COGUTIL_API cog_result_t cog_init(void);
 COGUTIL_API void         cog_shutdown(void);
 COGUTIL_API const char*  cog_version(void);
 
-/* Convenience macros */
-#define COG_TRACE(module, ...) cog_log(COG_LOG_TRACE, module, __VA_ARGS__)
-#define COG_DEBUG(module, ...) cog_log(COG_LOG_DEBUG, module, __VA_ARGS__)
-#define COG_INFO(module, ...)  cog_log(COG_LOG_INFO, module, __VA_ARGS__)
-#define COG_WARN(module, ...)  cog_log(COG_LOG_WARN, module, __VA_ARGS__)
-#define COG_ERROR(module, ...) cog_log(COG_LOG_ERROR, module, __VA_ARGS__)
-#define COG_FATAL(module, ...) cog_log(COG_LOG_FATAL, module, __VA_ARGS__)
+/* Convenience macros with module context */
+#define COG_TRACE(module, fmt, ...) cog_log(COG_LOG_TRACE, __FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__)
+#define COG_DEBUG(module, fmt, ...) cog_log(COG_LOG_DEBUG, __FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__)
+#define COG_INFO(module, fmt, ...)  cog_log(COG_LOG_INFO,  __FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__)
+#define COG_WARN(module, fmt, ...)  cog_log(COG_LOG_WARN,  __FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__)
+#define COG_ERROR(module, fmt, ...) cog_log(COG_LOG_ERROR, __FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__)
+#define COG_FATAL(module, fmt, ...) cog_log(COG_LOG_FATAL, __FILE__, __LINE__, __func__, fmt, ##__VA_ARGS__)
 
 /*===========================================================================
  * Memory Management
@@ -225,13 +240,37 @@ COGUTIL_API cog_threadpool_t cog_threadpool_create(size_t num_threads);
 COGUTIL_API void             cog_threadpool_destroy(cog_threadpool_t pool);
 COGUTIL_API cog_result_t     cog_threadpool_submit(cog_threadpool_t pool, cog_thread_func_t func, void* arg);
 
+/* Task function type (fire-and-forget, returns void) */
+typedef void (*cog_task_func_t)(void* arg);
+
+/* Task queue */
+struct cog_task_queue;
+typedef struct cog_task_queue cog_task_queue_t;
+
+COGUTIL_API cog_result_t cog_task_queue_create(cog_task_queue_t** queue, size_t max_size);
+COGUTIL_API void         cog_task_queue_destroy(cog_task_queue_t* queue);
+COGUTIL_API cog_result_t cog_task_queue_push(cog_task_queue_t* queue, cog_task_func_t func, void* arg);
+COGUTIL_API cog_result_t cog_task_queue_pop(cog_task_queue_t* queue, cog_task_func_t* func, void** arg);
+COGUTIL_API size_t       cog_task_queue_size(cog_task_queue_t* queue);
+COGUTIL_API void         cog_task_queue_close(cog_task_queue_t* queue);
+
+/* Global thread pool (task-based) */
+COGUTIL_API cog_result_t cog_thread_pool_create(size_t thread_count);
+COGUTIL_API void         cog_thread_pool_destroy(void);
+COGUTIL_API cog_result_t cog_thread_pool_submit(cog_task_func_t func, void* arg);
+
 /*===========================================================================
  * UUID Generation
  *===========================================================================*/
 
-COGUTIL_API cog_uuid_t cog_uuid_generate(void);
-COGUTIL_API void       cog_uuid_to_string(cog_uuid_t uuid, char* buffer, size_t size);
-COGUTIL_API cog_uuid_t cog_uuid_from_string(const char* str);
+typedef struct {
+    uint8_t bytes[16];
+} cog_uuid_t;
+
+COGUTIL_API void cog_uuid_generate(cog_uuid_t* uuid);
+COGUTIL_API void cog_uuid_to_string(const cog_uuid_t* uuid, char* buffer);
+COGUTIL_API bool cog_uuid_from_string(cog_uuid_t* uuid, const char* str);
+COGUTIL_API bool cog_uuid_equals(const cog_uuid_t* a, const cog_uuid_t* b);
 
 /*===========================================================================
  * Hash Functions
@@ -245,22 +284,26 @@ COGUTIL_API uint64_t cog_hash_combine(uint64_t h1, uint64_t h2);
  * Configuration Management
  *===========================================================================*/
 
-typedef struct cog_config* cog_config_t;
+struct cog_config;
+typedef struct cog_config cog_config_t;
 
-COGUTIL_API cog_config_t cog_config_create(void);
-COGUTIL_API void         cog_config_destroy(cog_config_t config);
-COGUTIL_API cog_result_t cog_config_load_file(cog_config_t config, const char* path);
-COGUTIL_API cog_result_t cog_config_save_file(cog_config_t config, const char* path);
+COGUTIL_API cog_result_t cog_config_create(cog_config_t** config);
+COGUTIL_API void         cog_config_destroy(cog_config_t* config);
+COGUTIL_API cog_result_t cog_config_load(cog_config_t* config, const char* path);
+COGUTIL_API cog_result_t cog_config_save(cog_config_t* config, const char* path);
 
-COGUTIL_API const char*  cog_config_get_string(cog_config_t config, const char* key, const char* default_val);
-COGUTIL_API int64_t      cog_config_get_int(cog_config_t config, const char* key, int64_t default_val);
-COGUTIL_API double       cog_config_get_float(cog_config_t config, const char* key, double default_val);
-COGUTIL_API bool         cog_config_get_bool(cog_config_t config, const char* key, bool default_val);
+COGUTIL_API cog_result_t cog_config_set(cog_config_t* config, const char* key, const char* value);
+COGUTIL_API const char*  cog_config_get(cog_config_t* config, const char* key, const char* default_val);
+COGUTIL_API int          cog_config_get_int(cog_config_t* config, const char* key, int default_val);
+COGUTIL_API double       cog_config_get_double(cog_config_t* config, const char* key, double default_val);
+COGUTIL_API bool         cog_config_get_bool(cog_config_t* config, const char* key, bool default_val);
 
-COGUTIL_API void         cog_config_set_string(cog_config_t config, const char* key, const char* value);
-COGUTIL_API void         cog_config_set_int(cog_config_t config, const char* key, int64_t value);
-COGUTIL_API void         cog_config_set_float(cog_config_t config, const char* key, double value);
-COGUTIL_API void         cog_config_set_bool(cog_config_t config, const char* key, bool value);
+/* Compatibility aliases for old API names */
+#define cog_config_load_file(cfg, path)       cog_config_load(cfg, path)
+#define cog_config_save_file(cfg, path)       cog_config_save(cfg, path)
+#define cog_config_get_string(cfg, key, def)  cog_config_get(cfg, key, def)
+#define cog_config_get_float(cfg, key, def)   cog_config_get_double(cfg, key, def)
+#define cog_config_set_string(cfg, key, val)  cog_config_set(cfg, key, val)
 
 /*===========================================================================
  * Timer and Time Utilities
@@ -268,7 +311,8 @@ COGUTIL_API void         cog_config_set_bool(cog_config_t config, const char* ke
 
 COGUTIL_API uint64_t cog_time_now_ms(void);
 COGUTIL_API uint64_t cog_time_now_us(void);
-COGUTIL_API void     cog_sleep_ms(uint32_t ms);
+COGUTIL_API void     cog_time_sleep_ms(uint32_t ms);
+#define              cog_sleep_ms(ms) cog_time_sleep_ms(ms)
 
 typedef struct cog_timer* cog_timer_t;
 typedef void (*cog_timer_callback_t)(void* user_data);

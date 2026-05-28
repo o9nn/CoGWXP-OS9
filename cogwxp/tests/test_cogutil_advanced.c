@@ -231,13 +231,13 @@ static void test_uuid_uniqueness(void) {
     const int N = 100;
     cog_uuid_t uuids[100];
     for (int i = 0; i < N; i++)
-        uuids[i] = cog_uuid_generate();
+        cog_uuid_generate(&uuids[i]);
 
     /* Check all are unique */
     int all_unique = 1;
     for (int i = 0; i < N && all_unique; i++)
         for (int j = i + 1; j < N && all_unique; j++)
-            if (uuids[i] == uuids[j])
+            if (cog_uuid_equals(&uuids[i], &uuids[j]))
                 all_unique = 0;
 
     TEST_ASSERT(all_unique, "100 generated UUIDs are all unique");
@@ -246,14 +246,16 @@ static void test_uuid_uniqueness(void) {
 static void test_uuid_string_roundtrip(void) {
     printf("\n=== UUID String Roundtrip ===\n");
 
-    cog_uuid_t orig = cog_uuid_generate();
+    cog_uuid_t orig;
+    cog_uuid_generate(&orig);
     char buf[64];
-    cog_uuid_to_string(orig, buf, sizeof(buf));
+    cog_uuid_to_string(&orig, buf);
 
     TEST_ASSERT(strlen(buf) > 0, "UUID string non-empty");
 
-    cog_uuid_t parsed = cog_uuid_from_string(buf);
-    TEST_ASSERT(parsed == orig, "UUID parsed from string matches original");
+    cog_uuid_t parsed;
+    cog_uuid_from_string(&parsed, buf);
+    TEST_ASSERT(cog_uuid_equals(&parsed, &orig), "UUID parsed from string matches original");
 }
 
 /*===========================================================================

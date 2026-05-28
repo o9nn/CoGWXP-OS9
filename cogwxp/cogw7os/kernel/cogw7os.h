@@ -70,8 +70,90 @@ typedef uint64_t cogw7_handle_t;
 #define COGW7_CURRENT_THREAD    ((cogw7_handle_t)-2)
 
 /*===========================================================================
+ * Internal implementation types (used by cogw7os.c)
+ *===========================================================================*/
+
+/* Process state (used by internal implementation) */
+typedef enum {
+    COGW7_PROC_CREATED = 0,
+    COGW7_PROC_RUNNING,
+    COGW7_PROC_SUSPENDED,
+    COGW7_PROC_TERMINATED
+} cogw7_process_state_t;
+
+/* Service type (used by internal implementation) */
+typedef enum {
+    COGW7_SVC_MEMORY_MANAGER = 0,
+    COGW7_SVC_PROCESS_MANAGER,
+    COGW7_SVC_THREAD_SCHEDULER,
+    COGW7_SVC_COGNITIVE_ENGINE,
+    COGW7_SVC_ATTENTION_ALLOCATOR,
+    COGW7_SVC_REASONING_ENGINE
+} cogw7_service_type_t;
+
+/* Kernel state (used by internal implementation) */
+typedef enum {
+    COGW7_KERNEL_UNINITIALIZED = 0,
+    COGW7_KERNEL_INITIALIZING,
+    COGW7_KERNEL_RUNNING,
+    COGW7_KERNEL_SHUTTING_DOWN,
+    COGW7_KERNEL_TERMINATED,
+    /* Aliases used by implementation */
+    COGW7_STATE_INIT         = COGW7_KERNEL_UNINITIALIZED,
+    COGW7_STATE_BOOTING      = COGW7_KERNEL_INITIALIZING,
+    COGW7_STATE_RUNNING      = COGW7_KERNEL_RUNNING,
+    COGW7_STATE_SHUTTING_DOWN = COGW7_KERNEL_SHUTTING_DOWN,
+    COGW7_STATE_HALTED       = COGW7_KERNEL_TERMINATED
+} cogw7_kernel_state_t;
+
+/* Kernel configuration (used by internal implementation) */
+typedef struct {
+    size_t max_processes;
+    size_t max_threads_per_process;
+    size_t default_stack_size;
+    uint32_t scheduler_quantum_ms;
+    bool enable_cognitive_scheduling;
+    bool enable_attention_allocation;
+    uint32_t reasoning_interval_ms;
+} cogw7_config_t;
+
+/* Internal statistics (used by internal implementation) */
+typedef struct {
+    size_t process_count;
+    size_t thread_count;
+    size_t agent_count;
+    uint64_t total_processes_created;
+    uint64_t total_threads_created;
+    uint64_t scheduler_ticks;
+    uint64_t reasoning_cycles;
+    uint64_t inferences_made;
+    uint64_t uptime_ms;
+} cogw7_stats_t;
+
+/* Opaque kernel handle (used by internal implementation) */
+struct cogw7_kernel;
+typedef struct cogw7_kernel* cogw7_kernel_t;
+
+/* pln_context_t is an alias for pln_engine_t */
+typedef pln_engine_t pln_context_t;
+
+/* Process info structure (used by cogw7_process_get_info) */
+typedef struct {
+    uint32_t pid;
+    char name[256];
+    cogw7_process_state_t state;
+    uint32_t parent_pid;
+    size_t thread_count;
+    size_t handle_count;
+    size_t memory_used;
+    atom_handle_t process_atom;
+} cogw7_process_info_t;
+
+/*===========================================================================
  * Process and Thread Structures
  *===========================================================================*/
+
+#ifndef _COGW7_INTERNAL
 
 typedef struct cogw7_process {
     cogw7_handle_t handle;
@@ -137,6 +219,14 @@ typedef struct cogw7_thread {
     uint64_t cpu_cycles;
     uint64_t context_switches;
 } cogw7_thread_t;
+
+#else /* _COGW7_INTERNAL */
+
+/* When compiled as internal implementation, use opaque forward declarations */
+typedef struct cogw7_process cogw7_process_t;
+typedef struct cogw7_thread cogw7_thread_t;
+
+#endif /* _COGW7_INTERNAL */
 
 /*===========================================================================
  * Cognitive Agent
@@ -250,8 +340,11 @@ typedef struct cogw7_init_config {
 
 COGUTIL_API cogw7_init_config_t cogw7_config_default(void);
 COGUTIL_API cog_result_t cogw7_kernel_init(cogw7_init_config_t* config);
-COGUTIL_API void         cogw7_kernel_shutdown(void);
 COGUTIL_API bool         cogw7_kernel_is_initialized(void);
+
+#ifndef _COGW7_INTERNAL
+/* Public API function signatures (different from internal impl) */
+COGUTIL_API void         cogw7_kernel_shutdown(void);
 
 /*===========================================================================
  * Process Management
@@ -310,6 +403,8 @@ COGUTIL_API cog_result_t cogw7_thread_set_cognitive_boost(
     cogw7_handle_t thread_handle,
     int8_t boost
 );
+
+#endif /* _COGW7_INTERNAL */
 
 /*===========================================================================
  * Agent Management
