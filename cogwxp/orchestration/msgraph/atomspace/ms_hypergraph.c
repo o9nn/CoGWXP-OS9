@@ -486,13 +486,59 @@ COGUTIL_API cog_result_t msgraph_entity_to_atom(
     atom_handle_t* atom
 ) {
     if (!ctx || !entity || !atom) return COG_ERROR_INVALID_PARAM;
+    if (!ctx->atomspace) return COG_ERROR_INIT;
     
-    /* Create atom representing the entity */
-    /* In a real implementation, this would use the AtomSpace API */
+    atomspace_t as = ctx->atomspace;
     
-    /* For now, generate a placeholder handle */
-    static uint64_t next_handle = 1000;
-    *atom = next_handle++;
+    /* Determine the entity type category name */
+    const char* type_name = NULL;
+    switch (entity->type) {
+        case MSGRAPH_ENTITY_USER:    type_name = "MSGraph:User"; break;
+        case MSGRAPH_ENTITY_GROUP:   type_name = "MSGraph:Group"; break;
+        case MSGRAPH_ENTITY_TEAM:    type_name = "MSGraph:Team"; break;
+        case MSGRAPH_ENTITY_CHANNEL: type_name = "MSGraph:Channel"; break;
+        case MSGRAPH_ENTITY_DRIVE:   type_name = "MSGraph:Drive"; break;
+        case MSGRAPH_ENTITY_SITE:    type_name = "MSGraph:Site"; break;
+        case MSGRAPH_ENTITY_MESSAGE: type_name = "MSGraph:Message"; break;
+        case MSGRAPH_ENTITY_EVENT:   type_name = "MSGraph:Event"; break;
+        default:                     type_name = "MSGraph:Entity"; break;
+    }
+    
+    /* Create the entity node with truth value <1.0, 0.9> */
+    const char* name = entity->display_name ? entity->display_name : entity->id;
+    truth_value_t entity_tv = {.strength = 1.0, .confidence = 0.9};
+    atom_handle_t entity_atom = atomspace_add_node(as, ATOM_TYPE_CONCEPT, name, &entity_tv);
+    if (entity_atom == ATOM_HANDLE_INVALID) return COG_ERROR_MEMORY;
+    
+    /* Create the type category node */
+    atom_handle_t category = atomspace_add_node(as, ATOM_TYPE_CONCEPT, type_name, NULL);
+    if (category != ATOM_HANDLE_INVALID) {
+        /* InheritanceLink: entity -> category  TV <1.0, 1.0> */
+        atom_handle_t inh_out[2] = {entity_atom, category};
+        truth_value_t inh_tv = {.strength = 1.0, .confidence = 1.0};
+        atomspace_add_link(as, ATOM_TYPE_INHERITANCE, inh_out, 2, &inh_tv);
+    }
+    
+    /* Store entity ID as an EvaluationLink property */
+    if (entity->id) {
+        atom_handle_t id_pred = atomspace_add_node(as, ATOM_TYPE_PREDICATE, "msgraph:id", NULL);
+        char id_name[256];
+        snprintf(id_name, sizeof(id_name), "id:%s", entity->id);
+        atom_handle_t id_val = atomspace_add_node(as, ATOM_TYPE_CONCEPT, id_name, NULL);
+        if (id_pred != ATOM_HANDLE_INVALID && id_val != ATOM_HANDLE_INVALID) {
+            atom_handle_t list_out[2] = {entity_atom, id_val};
+            atom_handle_t list_link = atomspace_add_link(as, ATOM_TYPE_LIST, list_out, 2, NULL);
+            if (list_link != ATOM_HANDLE_INVALID) {
+                atom_handle_t eval_out[2] = {id_pred, list_link};
+                atomspace_add_link(as, ATOM_TYPE_EVALUATION, eval_out, 2, NULL);
+            }
+        }
+    }
+    
+    /* Stimulate the atom to bring it into attentional focus */
+    atomspace_stimulate(as, entity_atom, 5);
+    
+    *atom = entity_atom;
     
     /* Update stats */
     pthread_mutex_lock(&ctx->stats_mutex);
@@ -508,9 +554,48 @@ COGUTIL_API cog_result_t msgraph_atom_to_entity(
     msgraph_entity_t* entity
 ) {
     if (!ctx || !entity) return COG_ERROR_INVALID_PARAM;
+    if (!ctx->atomspace) return COG_ERROR_INIT;
+    if (atom == ATOM_HANDLE_INVALID) return COG_ERROR_INVALID_PARAM;
     
-    /* In a real implementation, this would look up the atom in AtomSpace
-     * and extract the entity information */
+    atomspace_t as = ctx->atomspace;
+    
+    /* Get the atom's name (display_name) */
+    const char* node_name = atomspace_get_name(as, atom);
+    if (!node_name) return COG_ERROR_NOT_FOUND;
+    
+    entity->display_name = strdup(node_name);
+    
+    /* Determine entity type by checking InheritanceLinks to category nodes */
+    static const struct {
+        const char* category;
+        msgraph_entity_type_t type;
+    } type_map[] = {
+        {"MSGraph:User",    MSGRAPH_ENTITY_USER},
+        {"MSGraph:Group",   MSGRAPH_ENTITY_GROUP},
+        {"MSGraph:Team",    MSGRAPH_ENTITY_TEAM},
+        {"MSGraph:Channel", MSGRAPH_ENTITY_CHANNEL},
+        {"MSGraph:Drive",   MSGRAPH_ENTITY_DRIVE},
+        {"MSGraph:Site",    MSGRAPH_ENTITY_SITE},
+        {"MSGraph:Message", MSGRAPH_ENTITY_MESSAGE},
+        {"MSGraph:Event",   MSGRAPH_ENTITY_EVENT},
+    };
+    
+    entity->type = MSGRAPH_ENTITY_USER; /* default */
+    for (int i = 0; i < 8; i++) {
+        atom_handle_t cat = atomspace_get_node(as, ATOM_TYPE_CONCEPT, type_map[i].category);
+        if (cat != ATOM_HANDLE_INVALID) {
+            atom_handle_t inh_out[2] = {atom, cat};
+            atom_handle_t inh = atomspace_get_link(as, ATOM_TYPE_INHERITANCE, inh_out, 2);
+            if (inh != ATOM_HANDLE_INVALID) {
+                entity->type = type_map[i].type;
+                break;
+            }
+        }
+    }
+    
+    /* Recover entity ID from EvaluationLink(msgraph:id, ListLink(atom, id_val)) */
+    /* For now, set id to NULL if not recoverable */
+    entity->id = NULL;
     
     return COG_OK;
 }

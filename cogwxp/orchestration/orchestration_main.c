@@ -100,8 +100,14 @@ COGUTIL_API cog_result_t cogwxp_orchestration_init(
     
     /* Initialize AtomSpace */
     printf("  [1/8] Initializing AtomSpace...\n");
-    /* Would initialize AtomSpace here */
-    o->atomspace = (atomspace_t)1; /* Placeholder */
+    atomspace_config_t as_config = {0};
+    result = atomspace_create(&as_config, &o->atomspace);
+    if (result != COG_OK) {
+        printf("    FATAL: AtomSpace initialization failed\n");
+        free(o);
+        return result;
+    }
+    printf("    AtomSpace created successfully\n");
     
     /* Initialize MSHyperGraph */
     if (config->enable_msgraph) {
@@ -231,6 +237,13 @@ COGUTIL_API void cogwxp_orchestration_shutdown(cogwxp_orchestration_t* orchestra
     if (orchestration->torch7u) torch7u_shutdown(orchestration->torch7u);
     if (orchestration->dynav) dynav_shutdown(orchestration->dynav);
     if (orchestration->hypermind) hypermind_shutdown(orchestration->hypermind);
+    
+    /* Destroy the shared AtomSpace last (all components must be stopped first) */
+    if (orchestration->atomspace) {
+        printf("  Destroying AtomSpace...\n");
+        atomspace_destroy(orchestration->atomspace);
+        orchestration->atomspace = NULL;
+    }
     
     pthread_mutex_unlock(&orchestration->lock);
     pthread_mutex_destroy(&orchestration->lock);
