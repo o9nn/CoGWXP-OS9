@@ -771,6 +771,86 @@ COGUTIL_API cog_result_t fractal_prune_by_scale(
  */
 COGUTIL_API cog_result_t fractal_compact(fractal_atomspace_t fas);
 
+/*===========================================================================
+ * Repair and Integrity Functions
+ *===========================================================================*/
+
+/**
+ * Hierarchy integrity issue flags
+ */
+#define FRACTAL_ISSUE_NONE            0x0000
+#define FRACTAL_ISSUE_DUPLICATE_CHILD 0x0001
+#define FRACTAL_ISSUE_ORPHAN_ATOM     0x0002
+#define FRACTAL_ISSUE_INVALID_PARENT  0x0004
+#define FRACTAL_ISSUE_DEPTH_MISMATCH  0x0008
+#define FRACTAL_ISSUE_CYCLE_DETECTED  0x0010
+
+/**
+ * Validation result structure
+ */
+typedef struct fractal_validation_result {
+    size_t atoms_checked;
+    size_t atoms_with_issues;
+    size_t duplicate_child_issues;
+    size_t orphan_issues;
+    size_t invalid_parent_issues;
+    size_t depth_mismatch_issues;
+    size_t cycle_issues;
+} fractal_validation_result_t;
+
+/**
+ * Check if an atom has duplicate children
+ */
+COGUTIL_API bool fractal_has_duplicate_children(
+    fractal_atomspace_t fas,
+    atom_handle_t handle
+);
+
+/**
+ * Count duplicate children for an atom
+ */
+COGUTIL_API size_t fractal_count_duplicate_children(
+    fractal_atomspace_t fas,
+    atom_handle_t handle
+);
+
+/**
+ * Repair duplicate children in a single atom
+ * Returns number of duplicates removed
+ */
+COGUTIL_API size_t fractal_repair_duplicates(
+    fractal_atomspace_t fas,
+    atom_handle_t handle
+);
+
+/**
+ * Repair all duplicate children in entire atomspace
+ * Returns total duplicates removed
+ */
+COGUTIL_API size_t fractal_repair_all_duplicates(fractal_atomspace_t fas);
+
+/**
+ * Validate integrity of a single atom
+ * Returns bitmask of FRACTAL_ISSUE_* flags
+ */
+COGUTIL_API uint32_t fractal_validate_atom(
+    fractal_atomspace_t fas,
+    atom_handle_t handle
+);
+
+/**
+ * Validate entire hierarchy integrity
+ */
+COGUTIL_API cog_result_t fractal_validate_hierarchy(
+    fractal_atomspace_t fas,
+    fractal_validation_result_t* result
+);
+
+/**
+ * Comprehensive repair function for all detectable issues
+ */
+COGUTIL_API cog_result_t fractal_repair_hierarchy(fractal_atomspace_t fas);
+
 #ifdef __cplusplus
 }
 #endif
