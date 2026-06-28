@@ -1364,7 +1364,7 @@ COGUTIL_API atom_handle_t* fractal_get_in_scale_range(fractal_atomspace_t* fas, 
 /**
  * Check if an atom has duplicate children in its child array
  */
-COGUTIL_API bool fractal_has_duplicate_children(fractal_atomspace_t* fas, atom_handle_t handle) {
+COGUTIL_API bool fractal_has_duplicate_children(fractal_atomspace_t fas, atom_handle_t handle) {
     if (!fas) return false;
     
     fractal_atom_t* atom = find_atom(fas, handle);
@@ -1385,7 +1385,7 @@ COGUTIL_API bool fractal_has_duplicate_children(fractal_atomspace_t* fas, atom_h
 /**
  * Count the number of duplicate children for an atom
  */
-COGUTIL_API size_t fractal_count_duplicate_children(fractal_atomspace_t* fas, atom_handle_t handle) {
+COGUTIL_API size_t fractal_count_duplicate_children(fractal_atomspace_t fas, atom_handle_t handle) {
     if (!fas) return 0;
     
     fractal_atom_t* atom = find_atom(fas, handle);
@@ -1408,7 +1408,7 @@ COGUTIL_API size_t fractal_count_duplicate_children(fractal_atomspace_t* fas, at
  * Repair duplicate children in an atom's child array
  * Returns the number of duplicates removed
  */
-COGUTIL_API size_t fractal_repair_duplicates(fractal_atomspace_t* fas, atom_handle_t handle) {
+COGUTIL_API size_t fractal_repair_duplicates(fractal_atomspace_t fas, atom_handle_t handle) {
     if (!fas) return 0;
     
     fractal_atom_t* atom = find_atom(fas, handle);
@@ -1444,7 +1444,7 @@ COGUTIL_API size_t fractal_repair_duplicates(fractal_atomspace_t* fas, atom_hand
  * Repair all duplicate children in the entire fractal atomspace
  * Returns total number of duplicates removed
  */
-COGUTIL_API size_t fractal_repair_all_duplicates(fractal_atomspace_t* fas) {
+COGUTIL_API size_t fractal_repair_all_duplicates(fractal_atomspace_t fas) {
     if (!fas) return 0;
     
     size_t total_removed = 0;
@@ -1460,20 +1460,10 @@ COGUTIL_API size_t fractal_repair_all_duplicates(fractal_atomspace_t* fas) {
 }
 
 /**
- * Hierarchy integrity issue flags
- */
-#define FRACTAL_ISSUE_NONE            0x0000
-#define FRACTAL_ISSUE_DUPLICATE_CHILD 0x0001
-#define FRACTAL_ISSUE_ORPHAN_ATOM     0x0002
-#define FRACTAL_ISSUE_INVALID_PARENT  0x0004
-#define FRACTAL_ISSUE_DEPTH_MISMATCH  0x0008
-#define FRACTAL_ISSUE_CYCLE_DETECTED  0x0010
-
-/**
  * Validate hierarchy integrity for a single atom
  * Returns a bitmask of issues found
  */
-COGUTIL_API uint32_t fractal_validate_atom(fractal_atomspace_t* fas, atom_handle_t handle) {
+COGUTIL_API uint32_t fractal_validate_atom(fractal_atomspace_t fas, atom_handle_t handle) {
     if (!fas) return FRACTAL_ISSUE_NONE;
     
     fractal_atom_t* atom = find_atom(fas, handle);
@@ -1530,7 +1520,7 @@ COGUTIL_API uint32_t fractal_validate_atom(fractal_atomspace_t* fas, atom_handle
     return issues;
 }
 
-COGUTIL_API cog_result_t fractal_validate_hierarchy(fractal_atomspace_t* fas, 
+COGUTIL_API cog_result_t fractal_validate_hierarchy(fractal_atomspace_t fas, 
                                                       fractal_validation_result_t* result) {
     if (!fas || !result) return COG_ERROR_INVALID_PARAM;
     
@@ -1562,7 +1552,7 @@ COGUTIL_API cog_result_t fractal_validate_hierarchy(fractal_atomspace_t* fas,
  * Comprehensive repair function that fixes all detectable issues
  * Returns COG_SUCCESS if all repairs succeeded
  */
-COGUTIL_API cog_result_t fractal_repair_hierarchy(fractal_atomspace_t* fas) {
+COGUTIL_API cog_result_t fractal_repair_hierarchy(fractal_atomspace_t fas) {
     if (!fas) return COG_ERROR_INVALID_PARAM;
     
     /* Step 1: Repair duplicate children */
