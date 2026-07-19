@@ -115,7 +115,8 @@ jobs:
       # -----------------------------------------------------------------------
       # Configure
       # -----------------------------------------------------------------------
-      - name: Configure CMake
+      - name: Configure CMake (non-Windows)
+        if: runner.os != 'Windows'
         shell: bash
         run: |
           cmake -B build -S cogwxp \
@@ -127,8 +128,26 @@ jobs:
             -DENABLE_DIS_INTEGRATION=ON \
             -DENABLE_NT_INTEGRATION=OFF \
             -DENABLE_SSL=OFF \
-            ${{ runner.os == 'Windows' && '-DBUILD_TESTS=OFF -DENABLE_9P_INTEGRATION=OFF -DENABLE_DIS_INTEGRATION=OFF -DENABLE_MSGRAPH=OFF -DENABLE_COGPILOT=OFF -DENABLE_OSDEPLOY=OFF -DENABLE_AZURITE=OFF -DENABLE_TOOLCHAINS=OFF' || '' }} \
             ${{ matrix.sanitizers || '' }}
+
+      - name: Configure CMake (Windows)
+        if: runner.os == 'Windows'
+        shell: bash
+        run: |
+          cmake -B build -S cogwxp \
+            -GNinja \
+            -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DBUILD_TESTS=OFF \
+            -DBUILD_SHARED_LIBS=ON \
+            -DENABLE_9P_INTEGRATION=OFF \
+            -DENABLE_DIS_INTEGRATION=OFF \
+            -DENABLE_NT_INTEGRATION=OFF \
+            -DENABLE_SSL=OFF \
+            -DENABLE_MSGRAPH=OFF \
+            -DENABLE_COGPILOT=OFF \
+            -DENABLE_OSDEPLOY=OFF \
+            -DENABLE_AZURITE=OFF \
+            -DENABLE_TOOLCHAINS=OFF
 
       # -----------------------------------------------------------------------
       # Build

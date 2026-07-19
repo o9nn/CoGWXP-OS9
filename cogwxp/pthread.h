@@ -11,7 +11,9 @@
 
 typedef HANDLE pthread_t;
 typedef SRWLOCK pthread_mutex_t;
-typedef CRITICAL_SECTION pthread_rwlock_t;
+typedef struct {
+    SRWLOCK lock;
+} pthread_rwlock_t;
 typedef CONDITION_VARIABLE pthread_cond_t;
 typedef void pthread_attr_t;
 typedef void pthread_mutexattr_t;
@@ -19,13 +21,31 @@ typedef void pthread_rwlockattr_t;
 typedef void pthread_condattr_t;
 
 #define PTHREAD_MUTEX_INITIALIZER SRWLOCK_INIT
-#define PTHREAD_RWLOCK_INITIALIZER {0}
+#define PTHREAD_RWLOCK_INITIALIZER { SRWLOCK_INIT }
 #define PTHREAD_COND_INITIALIZER CONDITION_VARIABLE_INIT
 
 typedef struct {
     void* (*start_routine)(void*);
     void* arg;
 } cogwxp_pthread_start_info_t;
+
+typedef struct {
+    const pthread_rwlock_t* lock;
+    int mode; /* 1 = shared, 2 = exclusive */
+} cogwxp_rwlock_entry_t;
+
+#define COGWXP_RWLOCK_STACK_MAX 64
+
+typedef struct {
+    cogwxp_rwlock_entry_t entries[COGWXP_RWLOCK_STACK_MAX];
+    int count;
+} cogwxp_rwlock_state_t;
+
+#if defined(_MSC_VER)
+static __declspec(thread) cogwxp_rwlock_state_t g_cogwxp_rwlock_state = {0};
+#else
+static __thread cogwxp_rwlock_state_t g_cogwxp_rwlock_state = {0};
+#endif
 
 static unsigned __stdcall cogwxp_pthread_start(void* arg) {
     cogwxp_pthread_start_info_t* info = (cogwxp_pthread_start_info_t*)arg;
@@ -119,15 +139,12 @@ static inline int pthread_rwlock_init(pthread_rwlock_t* rwlock, const pthread_rw
     if (!rwlock) {
         return EINVAL;
     }
-    InitializeCriticalSection(rwlock);
+    InitializeSRWLock(&rwlock->lock);
     return 0;
 }
 
 static inline int pthread_rwlock_destroy(pthread_rwlock_t* rwlock) {
-    if (!rwlock) {
-        return EINVAL;
-    }
-    DeleteCriticalSection(rwlock);
+    (void)rwlock;
     return 0;
 }
 
@@ -135,7 +152,14 @@ static inline int pthread_rwlock_rdlock(pthread_rwlock_t* rwlock) {
     if (!rwlock) {
         return EINVAL;
     }
-    EnterCriticalSection(rwlock);
+    AcquireSRWLockShared(&rwlock->lock);
+    if (g_cogwxp_rwlock_state.count >= COGWXP_RWLOCK_STACK_MAX) {
+        ReleaseSRWLockShared(&rwlock->lock);
+        return EAGAIN;
+    }
+    g_cogwxp_rwlock_state.entries[g_cogwxp_rwlock_state.count].lock = rwlock;
+    g_cogwxp_rwlock_state.entries[g_cogwxp_rwlock_state.count].mode = 1;
+    g_cogwxp_rwlock_state.count++;
     return 0;
 }
 
@@ -143,15 +167,46 @@ static inline int pthread_rwlock_wrlock(pthread_rwlock_t* rwlock) {
     if (!rwlock) {
         return EINVAL;
     }
-    EnterCriticalSection(rwlock);
+    AcquireSRWLockExclusive(&rwlock->lock);
+    if (g_cogwxp_rwlock_state.count >= COGWXP_RWLOCK_STACK_MAX) {
+        ReleaseSRWLockExclusive(&rwlock->lock);
+        return EAGAIN;
+    }
+    g_cogwxp_rwlock_state.entries[g_cogwxp_rwlock_state.count].lock = rwlock;
+    g_cogwxp_rwlock_state.entries[g_cogwxp_rwlock_state.count].mode = 2;
+    g_cogwxp_rwlock_state.count++;
     return 0;
 }
 
 static inline int pthread_rwlock_unlock(pthread_rwlock_t* rwlock) {
+    int idx = -1;
+    int mode = 0;
     if (!rwlock) {
         return EINVAL;
     }
-    LeaveCriticalSection(rwlock);
+
+    for (int i = g_cogwxp_rwlock_state.count - 1; i >= 0; --i) {
+        if (g_cogwxp_rwlock_state.entries[i].lock == rwlock) {
+            idx = i;
+            mode = g_cogwxp_rwlock_state.entries[i].mode;
+            break;
+        }
+    }
+
+    if (idx < 0 || (mode != 1 && mode != 2)) {
+        return EINVAL;
+    }
+
+    if (mode == 2) {
+        ReleaseSRWLockExclusive(&rwlock->lock);
+    } else {
+        ReleaseSRWLockShared(&rwlock->lock);
+    }
+
+    g_cogwxp_rwlock_state.count--;
+    for (int i = idx; i < g_cogwxp_rwlock_state.count; ++i) {
+        g_cogwxp_rwlock_state.entries[i] = g_cogwxp_rwlock_state.entries[i + 1];
+    }
     return 0;
 }
 
