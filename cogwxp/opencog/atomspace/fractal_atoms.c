@@ -199,6 +199,13 @@ COGUTIL_API cog_result_t fractal_add_child(fractal_atomspace_t* fas, atom_handle
     
     if (c->properties.depth + 1 >= fas->config.max_depth) return COG_ERROR_DEPTH_EXCEEDED;
     
+    /* Check for duplicate - prevent adding same child twice */
+    for (size_t i = 0; i < p->child_count; i++) {
+        if (p->children[i] == child) {
+            return COG_SUCCESS;  /* Child already exists, idempotent success */
+        }
+    }
+    
     /* Expand children array */
     atom_handle_t* new_children = realloc(p->children, (p->child_count + 1) * sizeof(atom_handle_t));
     if (!new_children) return COG_ERROR_MEMORY;
@@ -1348,4 +1355,260 @@ COGUTIL_API atom_handle_t* fractal_get_in_scale_range(fractal_atomspace_t* fas, 
     }
     
     return handles;
+}
+
+/* ============================================================================
+ * REPAIR AND INTEGRITY FUNCTIONS
+ * ============================================================================ */
+
+/**
+ * Check if an atom has duplicate children in its child array
+ */
+COGUTIL_API bool fractal_has_duplicate_children(fractal_atomspace_t fas, atom_handle_t handle) {
+    if (!fas) return false;
+    
+    fractal_atom_t* atom = find_atom(fas, handle);
+    if (!atom || atom->child_count < 2) return false;
+    
+    /* Check for duplicates using O(n^2) comparison */
+    for (size_t i = 0; i < atom->child_count; i++) {
+        for (size_t j = i + 1; j < atom->child_count; j++) {
+            if (atom->children[i] == atom->children[j]) {
+                return true;
+            }
+        }
+    }
+    
+    return false;
+}
+
+/**
+ * Count the number of duplicate children for an atom
+ */
+COGUTIL_API size_t fractal_count_duplicate_children(fractal_atomspace_t fas, atom_handle_t handle) {
+    if (!fas) return 0;
+    
+    fractal_atom_t* atom = find_atom(fas, handle);
+    if (!atom || atom->child_count < 2) return 0;
+    
+    size_t duplicate_count = 0;
+    
+    for (size_t i = 0; i < atom->child_count; i++) {
+        for (size_t j = i + 1; j < atom->child_count; j++) {
+            if (atom->children[i] == atom->children[j]) {
+                duplicate_count++;
+            }
+        }
+    }
+    
+    return duplicate_count;
+}
+
+/**
+ * Repair duplicate children in an atom's child array
+ * Returns the number of duplicates removed
+ */
+COGUTIL_API size_t fractal_repair_duplicates(fractal_atomspace_t fas, atom_handle_t handle) {
+    if (!fas) return 0;
+    
+    fractal_atom_t* atom = find_atom(fas, handle);
+    if (!atom || atom->child_count < 2) return 0;
+    
+    size_t duplicates_removed = 0;
+    size_t write_idx = 0;
+    
+    /* Create a temporary array to track unique children */
+    for (size_t i = 0; i < atom->child_count; i++) {
+        bool is_duplicate = false;
+        
+        /* Check if this child already exists in the compacted portion */
+        for (size_t j = 0; j < write_idx; j++) {
+            if (atom->children[i] == atom->children[j]) {
+                is_duplicate = true;
+                duplicates_removed++;
+                break;
+            }
+        }
+        
+        if (!is_duplicate) {
+            atom->children[write_idx++] = atom->children[i];
+        }
+    }
+    
+    atom->child_count = write_idx;
+    
+    return duplicates_removed;
+}
+
+/**
+ * Repair all duplicate children in the entire fractal atomspace
+ * Returns total number of duplicates removed
+ */
+COGUTIL_API size_t fractal_repair_all_duplicates(fractal_atomspace_t fas) {
+    if (!fas) return 0;
+    
+    size_t total_removed = 0;
+    
+    for (size_t i = 0; i < fas->atom_count; i++) {
+        if (!fas->atoms[i]) continue;
+        if (fas->atoms[i]->handle == ATOM_HANDLE_INVALID) continue;
+        
+        total_removed += fractal_repair_duplicates(fas, fas->atoms[i]->handle);
+    }
+    
+    return total_removed;
+}
+
+/**
+ * Validate hierarchy integrity for a single atom
+ * Returns a bitmask of issues found
+ */
+COGUTIL_API uint32_t fractal_validate_atom(fractal_atomspace_t fas, atom_handle_t handle) {
+    if (!fas) return FRACTAL_ISSUE_NONE;
+    
+    fractal_atom_t* atom = find_atom(fas, handle);
+    if (!atom) return FRACTAL_ISSUE_NONE;
+    
+    uint32_t issues = FRACTAL_ISSUE_NONE;
+    
+    /* Check for duplicate children */
+    if (fractal_has_duplicate_children(fas, handle)) {
+        issues |= FRACTAL_ISSUE_DUPLICATE_CHILD;
+    }
+    
+    /* Check parent validity */
+    if (atom->parent != ATOM_HANDLE_INVALID) {
+        fractal_atom_t* parent = find_atom(fas, atom->parent);
+        if (!parent) {
+            issues |= FRACTAL_ISSUE_INVALID_PARENT;
+        } else {
+            /* Check depth consistency */
+            if (atom->properties.depth != parent->properties.depth + 1) {
+                issues |= FRACTAL_ISSUE_DEPTH_MISMATCH;
+            }
+            
+            /* Check if atom is actually in parent's child list */
+            bool found_in_parent = false;
+            for (size_t i = 0; i < parent->child_count; i++) {
+                if (parent->children[i] == handle) {
+                    found_in_parent = true;
+                    break;
+                }
+            }
+            if (!found_in_parent) {
+                issues |= FRACTAL_ISSUE_ORPHAN_ATOM;
+            }
+        }
+    }
+    
+    /* Check for cycles by following parent chain */
+    atom_handle_t current = atom->parent;
+    size_t max_depth = fas->config.max_depth;
+    size_t depth_count = 0;
+    
+    while (current != ATOM_HANDLE_INVALID && depth_count < max_depth) {
+        if (current == handle) {
+            issues |= FRACTAL_ISSUE_CYCLE_DETECTED;
+            break;
+        }
+        fractal_atom_t* parent_atom = find_atom(fas, current);
+        if (!parent_atom) break;
+        current = parent_atom->parent;
+        depth_count++;
+    }
+    
+    return issues;
+}
+
+COGUTIL_API cog_result_t fractal_validate_hierarchy(fractal_atomspace_t fas, 
+                                                      fractal_validation_result_t* result) {
+    if (!fas || !result) return COG_ERROR_INVALID_PARAM;
+    
+    memset(result, 0, sizeof(fractal_validation_result_t));
+    
+    for (size_t i = 0; i < fas->atom_count; i++) {
+        if (!fas->atoms[i]) continue;
+        if (fas->atoms[i]->handle == ATOM_HANDLE_INVALID) continue;
+        
+        result->atoms_checked++;
+        
+        uint32_t issues = fractal_validate_atom(fas, fas->atoms[i]->handle);
+        
+        if (issues != FRACTAL_ISSUE_NONE) {
+            result->atoms_with_issues++;
+            
+            if (issues & FRACTAL_ISSUE_DUPLICATE_CHILD) result->duplicate_child_issues++;
+            if (issues & FRACTAL_ISSUE_ORPHAN_ATOM) result->orphan_issues++;
+            if (issues & FRACTAL_ISSUE_INVALID_PARENT) result->invalid_parent_issues++;
+            if (issues & FRACTAL_ISSUE_DEPTH_MISMATCH) result->depth_mismatch_issues++;
+            if (issues & FRACTAL_ISSUE_CYCLE_DETECTED) result->cycle_issues++;
+        }
+    }
+    
+    return COG_SUCCESS;
+}
+
+/**
+ * Comprehensive repair function that fixes all detectable issues
+ * Returns COG_SUCCESS if all repairs succeeded
+ */
+COGUTIL_API cog_result_t fractal_repair_hierarchy(fractal_atomspace_t fas) {
+    if (!fas) return COG_ERROR_INVALID_PARAM;
+    
+    /* Step 1: Repair duplicate children */
+    fractal_repair_all_duplicates(fas);
+    
+    /* Step 2: Fix depth mismatches by recalculating from roots */
+    for (size_t i = 0; i < fas->atom_count; i++) {
+        if (!fas->atoms[i]) continue;
+        if (fas->atoms[i]->handle == ATOM_HANDLE_INVALID) continue;
+        
+        /* Find root atoms and recalculate depth for their subtrees */
+        if (fas->atoms[i]->parent == ATOM_HANDLE_INVALID) {
+            fas->atoms[i]->properties.depth = 0;
+        } else {
+            fractal_atom_t* parent = find_atom(fas, fas->atoms[i]->parent);
+            if (parent) {
+                fas->atoms[i]->properties.depth = parent->properties.depth + 1;
+            } else {
+                /* Invalid parent reference - make this a root */
+                fas->atoms[i]->parent = ATOM_HANDLE_INVALID;
+                fas->atoms[i]->properties.depth = 0;
+            }
+        }
+    }
+    
+    /* Step 3: Fix orphan atoms by removing from parent reference */
+    for (size_t i = 0; i < fas->atom_count; i++) {
+        if (!fas->atoms[i]) continue;
+        if (fas->atoms[i]->handle == ATOM_HANDLE_INVALID) continue;
+        if (fas->atoms[i]->parent == ATOM_HANDLE_INVALID) continue;
+        
+        fractal_atom_t* parent = find_atom(fas, fas->atoms[i]->parent);
+        if (parent) {
+            bool found = false;
+            for (size_t j = 0; j < parent->child_count; j++) {
+                if (parent->children[j] == fas->atoms[i]->handle) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                /* Re-add to parent or make orphan a root */
+                cog_result_t result = fractal_add_child(fas, fas->atoms[i]->parent, 
+                                                         fas->atoms[i]->handle, 
+                                                         fas->atoms[i]->properties.scale_factor);
+                if (result != COG_SUCCESS) {
+                    /* If we can't add back, make it a root */
+                    fas->atoms[i]->parent = ATOM_HANDLE_INVALID;
+                    fas->atoms[i]->properties.depth = 0;
+                }
+            }
+        }
+    }
+    
+    /* Step 4: Update statistics */
+    fractal_reset_stats(fas);
+    
+    return COG_SUCCESS;
 }
