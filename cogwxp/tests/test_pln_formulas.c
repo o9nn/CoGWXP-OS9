@@ -66,18 +66,18 @@ static void test_tv_and_boundary(void) {
     printf("\n=== TV AND Boundary Cases ===\n");
 
     truth_value_t zero_zero = pln_tv_and(
-        &(truth_value_t){TRUTH_VALUE_SIMPLE, 0.0, 1.0, 1.0},
-        &(truth_value_t){TRUTH_VALUE_SIMPLE, 0.0, 1.0, 1.0});
+        (truth_value_t){TRUTH_VALUE_SIMPLE, 0.0, 1.0, 1.0},
+        (truth_value_t){TRUTH_VALUE_SIMPLE, 0.0, 1.0, 1.0});
     TEST_ASSERT(zero_zero.strength < 1e-9, "AND(0,0) strength ≈ 0");
 
     truth_value_t one_one = pln_tv_and(
-        &(truth_value_t){TRUTH_VALUE_SIMPLE, 1.0, 1.0, 1.0},
-        &(truth_value_t){TRUTH_VALUE_SIMPLE, 1.0, 1.0, 1.0});
+        (truth_value_t){TRUTH_VALUE_SIMPLE, 1.0, 1.0, 1.0},
+        (truth_value_t){TRUTH_VALUE_SIMPLE, 1.0, 1.0, 1.0});
     TEST_ASSERT(NEAR_EPS(one_one.strength, 1.0, 1e-9), "AND(1,1) strength ≈ 1");
 
     truth_value_t a = tv(0.8, 0.9);
     truth_value_t b = tv(0.6, 0.8);
-    truth_value_t r = pln_tv_and(&a, &b);
+    truth_value_t r = pln_tv_and(a, b);
     TEST_ASSERT(r.strength <= a.strength, "AND strength ≤ first operand");
     TEST_ASSERT(r.strength <= b.strength, "AND strength ≤ second operand");
     TEST_ASSERT(r.strength >= 0.0, "AND strength ≥ 0");
@@ -87,18 +87,18 @@ static void test_tv_or_boundary(void) {
     printf("\n=== TV OR Boundary Cases ===\n");
 
     truth_value_t zero_zero = pln_tv_or(
-        &(truth_value_t){TRUTH_VALUE_SIMPLE, 0.0, 1.0, 1.0},
-        &(truth_value_t){TRUTH_VALUE_SIMPLE, 0.0, 1.0, 1.0});
+        (truth_value_t){TRUTH_VALUE_SIMPLE, 0.0, 1.0, 1.0},
+        (truth_value_t){TRUTH_VALUE_SIMPLE, 0.0, 1.0, 1.0});
     TEST_ASSERT(zero_zero.strength < 1e-9, "OR(0,0) strength ≈ 0");
 
     truth_value_t one_one = pln_tv_or(
-        &(truth_value_t){TRUTH_VALUE_SIMPLE, 1.0, 1.0, 1.0},
-        &(truth_value_t){TRUTH_VALUE_SIMPLE, 1.0, 1.0, 1.0});
+        (truth_value_t){TRUTH_VALUE_SIMPLE, 1.0, 1.0, 1.0},
+        (truth_value_t){TRUTH_VALUE_SIMPLE, 1.0, 1.0, 1.0});
     TEST_ASSERT(NEAR_EPS(one_one.strength, 1.0, 1e-9), "OR(1,1) strength ≈ 1");
 
     truth_value_t a = tv(0.8, 0.9);
     truth_value_t b = tv(0.6, 0.8);
-    truth_value_t r = pln_tv_or(&a, &b);
+    truth_value_t r = pln_tv_or(a, b);
     TEST_ASSERT(r.strength >= a.strength || r.strength >= b.strength,
                 "OR strength ≥ at least one operand");
     TEST_ASSERT(r.strength <= 1.0, "OR strength ≤ 1");
@@ -108,21 +108,21 @@ static void test_tv_not_boundary(void) {
     printf("\n=== TV NOT Boundary Cases ===\n");
 
     truth_value_t one = tv(1.0, 1.0);
-    truth_value_t r = pln_tv_not(&one);
+    truth_value_t r = pln_tv_not(one);
     TEST_ASSERT(r.strength < 1e-9, "NOT(1) strength ≈ 0");
     TEST_ASSERT(NEAR(r.confidence, one.confidence), "NOT preserves confidence");
 
     truth_value_t zero = tv(0.0, 0.9);
-    r = pln_tv_not(&zero);
+    r = pln_tv_not(zero);
     TEST_ASSERT(NEAR_EPS(r.strength, 1.0, 1e-9), "NOT(0) strength ≈ 1");
     TEST_ASSERT(NEAR(r.confidence, zero.confidence), "NOT(0) preserves confidence");
 
     truth_value_t half = tv(0.5, 0.7);
-    r = pln_tv_not(&half);
+    r = pln_tv_not(half);
     TEST_ASSERT(NEAR_EPS(r.strength, 0.5, 1e-9), "NOT(0.5) strength ≈ 0.5");
 
     /* Double negation */
-    truth_value_t nn = pln_tv_not(&r);
+    truth_value_t nn = pln_tv_not(r);
     TEST_ASSERT(NEAR_EPS(nn.strength, half.strength, 1e-9), "Double NOT is identity");
 }
 
@@ -135,7 +135,7 @@ static void test_tv_revision(void) {
 
     truth_value_t a = tv(0.8, 0.6);
     truth_value_t b = tv(0.4, 0.4);
-    truth_value_t r = pln_tv_revision(&a, &b);
+    truth_value_t r = pln_tv_revision(a, b);
 
     TEST_ASSERT(r.confidence >= a.confidence || r.confidence >= b.confidence,
                 "Revision: combined confidence ≥ at least one input");
@@ -145,7 +145,7 @@ static void test_tv_revision(void) {
 
     /* Combining identical TVs should not reduce confidence */
     truth_value_t same = tv(0.9, 0.8);
-    truth_value_t r2 = pln_tv_revision(&same, &same);
+    truth_value_t r2 = pln_tv_revision(same, same);
     TEST_ASSERT(r2.confidence >= same.confidence,
                 "Revising with identical TV keeps or raises confidence");
     TEST_ASSERT(NEAR_EPS(r2.strength, same.strength, 0.05),

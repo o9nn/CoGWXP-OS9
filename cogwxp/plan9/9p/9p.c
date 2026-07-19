@@ -136,6 +136,8 @@ struct p9_server {
 };
 typedef struct p9_server p9_server_t;
 
+COGUTIL_API cog_result_t p9_server_stop(p9_server_t* server);
+
 /*===========================================================================
  * Message Encoding/Decoding
  *===========================================================================*/

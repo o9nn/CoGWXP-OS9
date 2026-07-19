@@ -18,6 +18,26 @@
 #include <sys/time.h>
 #include <errno.h>
 
+#if defined(_WIN32)
+#include <io.h>
+#ifndef isatty
+#define isatty _isatty
+#endif
+#ifndef fileno
+#define fileno _fileno
+#endif
+#else
+#include <unistd.h>
+#endif
+
+/* Forward declarations for memory-tracking helpers used before their
+ * definitions further down in this file. */
+COGUTIL_API void* cog_malloc_debug(size_t size, const char* file, int line);
+COGUTIL_API void* cog_calloc_debug(size_t count, size_t size, const char* file, int line);
+COGUTIL_API void* cog_realloc_debug(void* ptr, size_t size, const char* file, int line);
+COGUTIL_API void  cog_free_debug(void* ptr, const char* file, int line);
+COGUTIL_API char* cog_strdup_debug(const char* str, const char* file, int line);
+
 /*===========================================================================
  * Global State
  *===========================================================================*/
