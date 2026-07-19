@@ -226,10 +226,9 @@ COGUTIL_API cog_result_t cogw7_kernel_create(
     }
     
     /* Create PLN context */
-    pln_config_t pln_config = {
-        .max_inference_steps = 10,
-        .min_confidence_threshold = 0.1
-    };
+    pln_config_t pln_config = pln_config_default();
+    pln_config.max_inference_steps = 10;
+    pln_config.min_confidence_threshold = 0.1;
     k->pln = pln_engine_create(k->atomspace, &pln_config);
     result = k->pln ? COG_OK : COG_ERROR_MEMORY;
     if (result != COG_OK) {
@@ -292,7 +291,7 @@ COGUTIL_API void cogw7_kernel_destroy(cogw7_kernel_t kernel) {
     COG_FREE(kernel->agents.agents);
     
     /* Destroy PLN */
-    pln_shutdown(kernel->pln);
+    pln_engine_destroy(kernel->pln);
     
     /* Destroy AtomSpace */
     atomspace_destroy(kernel->atomspace);

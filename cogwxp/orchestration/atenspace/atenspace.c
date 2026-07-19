@@ -116,13 +116,16 @@ static atom_node_t* atom_table_find(atom_table_t* table, aten_handle_t handle) {
 }
 
 static atom_node_t* atom_table_find_node(atom_table_t* table, aten_atom_type_t type, const char* name) {
-    size_t bucket = hash_name(name, type, table->bucket_count);
-    atom_node_t* node = table->buckets[bucket];
-    while (node) {
-        if (node->atom.type == type && node->atom.name && strcmp(node->atom.name, name) == 0) {
-            return node;
+    /* Atoms are bucketed by handle (see atom_table_insert), so a name
+     * lookup must scan all buckets. */
+    for (size_t bucket = 0; bucket < table->bucket_count; bucket++) {
+        atom_node_t* node = table->buckets[bucket];
+        while (node) {
+            if (node->atom.type == type && node->atom.name && strcmp(node->atom.name, name) == 0) {
+                return node;
+            }
+            node = node->next;
         }
-        node = node->next;
     }
     return NULL;
 }
@@ -295,6 +298,10 @@ COGUTIL_API cog_result_t aten_create_node(
     /* Check if node already exists */
     atom_node_t* existing = atom_table_find_node(&ctx->atoms, type, name);
     if (existing) {
+        if (embedding && embedding_dim > 0 && !existing->atom.embedding) {
+            existing->atom.embedding =
+                tensor_create(embedding, embedding_dim, ctx->config.default_device);
+        }
         *handle = existing->atom.handle;
         pthread_rwlock_unlock(&ctx->atoms.lock);
         return COG_OK;
@@ -572,7 +579,7 @@ COGUTIL_API cog_result_t aten_find_similar(
     pthread_rwlock_unlock(&ctx->atoms.lock);
 
     /* Sort by similarity */
-    for (size_t i = 0; i < res_count - 1; i++) {
+    for (size_t i = 0; res_count > 1 && i < res_count - 1; i++) {
         for (size_t j = 0; j < res_count - i - 1; j++) {
             if (res_sims[j] < res_sims[j + 1]) {
                 float tmp_sim = res_sims[j];

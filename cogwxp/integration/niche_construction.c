@@ -181,7 +181,7 @@ COGUTIL_API cog_result_t niche_propose_technique(
     niche_glyph_t** proposals,
     size_t* proposal_count
 ) {
-    if (!engine || !proposals || !proposal_count) return COG_ERROR_INVALID_ARG;
+    if (!engine || !proposal_count) return COG_ERROR_INVALID_ARG;
     
     pthread_mutex_lock(&engine->lock);
     
@@ -189,17 +189,25 @@ COGUTIL_API cog_result_t niche_propose_technique(
     size_t count = engine->config.max_proposal_iterations > 0 ? 
                    engine->config.max_proposal_iterations : 5;
     
-    niche_glyph_t** glyphs = calloc(count, sizeof(niche_glyph_t*));
-    
     for (size_t i = 0; i < count; i++) {
         uint64_t id = generate_id(engine);
         char name[64];
         snprintf(name, sizeof(name), "proposal_%llu", (unsigned long long)id);
-        glyphs[i] = create_glyph(id, name);
-        glyphs[i]->intent = intent;
+        niche_glyph_t* glyph = create_glyph(id, name);
+        if (!glyph) {
+            pthread_mutex_unlock(&engine->lock);
+            return COG_ERROR_MEMORY;
+        }
+        glyph->intent = intent;
+        if (proposals) {
+            proposals[i] = glyph;
+        } else {
+            /* Caller only wants the count; discard the glyph */
+            free((void*)glyph->name);
+            free(glyph);
+        }
     }
     
-    *proposals = glyphs[0];  /* Return array base */
     *proposal_count = count;
     engine->total_proposals += count;
     
@@ -305,16 +313,29 @@ COGUTIL_API cog_result_t niche_opponent_cycle(
     cog_result_t res;
     
     /* Step 1: Propose techniques */
-    niche_glyph_t** proposals = NULL;
+    size_t max_props = engine->config.max_proposal_iterations > 0 ?
+                       engine->config.max_proposal_iterations : 5;
+    niche_glyph_t** proposals = calloc(max_props, sizeof(niche_glyph_t*));
+    if (!proposals) return COG_ERROR_MEMORY;
     size_t proposal_count = 0;
     res = niche_propose_technique(engine, goal, context, context_size, 
                                    proposals, &proposal_count);
-    if (res != COG_SUCCESS) return res;
+    if (res != COG_SUCCESS) {
+        free(proposals);
+        return res;
+    }
     
     /* Step 2: Normalize/evaluate */
     double* scores = calloc(proposal_count, sizeof(double));
     res = niche_normalize_proposals(engine, proposals, proposal_count, scores);
     if (res != COG_SUCCESS) {
+        for (size_t i = 0; i < proposal_count; i++) {
+            if (proposals[i]) {
+                free((void*)proposals[i]->name);
+                free(proposals[i]);
+            }
+        }
+        free(proposals);
         free(scores);
         return res;
     }
@@ -330,15 +351,26 @@ COGUTIL_API cog_result_t niche_opponent_cycle(
     }
     
     /* Step 4: Commit if good enough */
+    bool committed = false;
     if (best_score > engine->config.normalization_threshold) {
         char name[64];
         snprintf(name, sizeof(name), "skill_cycle_%llu", 
                  (unsigned long long)engine->total_cycles);
         res = niche_commit_skill(engine, proposals[best_idx], name, result_skill);
+        committed = (res == COG_SUCCESS);
     } else {
         res = COG_ERROR_GENERAL;
     }
     
+    /* Free proposals not taken over by the committed skill */
+    for (size_t i = 0; i < proposal_count; i++) {
+        if (committed && i == best_idx) continue;
+        if (proposals[i]) {
+            free((void*)proposals[i]->name);
+            free(proposals[i]);
+        }
+    }
+    free(proposals);
     free(scores);
     
     printf("[NicheEngine] Opponent cycle complete (score: %.3f)\n", best_score);

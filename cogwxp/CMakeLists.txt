@@ -121,6 +121,7 @@ add_subdirectory(orchestration)
 # 7. Test Suite
 if(BUILD_TESTS)
     message(STATUS "Configuring Test suite...")
+    enable_testing()
     add_subdirectory(tests)
 endif()
 

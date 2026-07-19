@@ -264,6 +264,49 @@ if(ENABLE_TOOLCHAINS)
 endif()
 
 # ===========================================================================
+# ATenSpace / CogZero / HyperMind Frameworks
+# ===========================================================================
+
+set(ATENSPACE_SOURCES
+    atenspace/atenspace.c
+    cogzero/cogzero.c
+    hypermind/hypermind.c
+)
+
+set(ATENSPACE_HEADERS
+    atenspace/atenspace.h
+    cogzero/cogzero.h
+    hypermind/hypermind.h
+)
+
+add_library(atenspace ${ATENSPACE_SOURCES})
+target_link_libraries(atenspace PUBLIC Threads::Threads m)
+
+if(TARGET cogutil)
+    target_link_libraries(atenspace PUBLIC cogutil)
+elseif(COGUTIL_LIB)
+    target_link_libraries(atenspace PUBLIC ${COGUTIL_LIB})
+endif()
+
+if(TARGET atomspace)
+    target_link_libraries(atenspace PUBLIC atomspace)
+elseif(ATOMSPACE_LIB)
+    target_link_libraries(atenspace PUBLIC ${ATOMSPACE_LIB})
+endif()
+
+if(TARGET pln)
+    target_link_libraries(atenspace PUBLIC pln)
+elseif(PLN_LIB)
+    target_link_libraries(atenspace PUBLIC ${PLN_LIB})
+endif()
+
+set_target_properties(atenspace PROPERTIES
+    VERSION ${PROJECT_VERSION}
+    SOVERSION 1
+    PUBLIC_HEADER "${ATENSPACE_HEADERS}"
+)
+
+# ===========================================================================
 # Unified Orchestration Library
 # ===========================================================================
 
@@ -326,6 +369,7 @@ target_link_libraries(cogwxp-orchestrate PRIVATE orchestration)
 include(GNUInstallDirs)
 
 set(INSTALL_TARGETS orchestration cogwxp-orchestrate)
+list(APPEND INSTALL_TARGETS atenspace)
 
 if(ENABLE_MSGRAPH)
     list(APPEND INSTALL_TARGETS msgraph)

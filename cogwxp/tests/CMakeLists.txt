@@ -68,6 +68,7 @@ target_link_libraries(test-niche-beast
     cogutil
     atomspace
     pln
+    cogwxp_os
     Threads::Threads
     m
 )

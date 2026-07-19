@@ -537,24 +537,26 @@ COGUTIL_API forward_chain_result_t* pln_forward_chain(
         ? max_steps : engine->config.max_inference_steps;
     if (limit == 0) limit = 1;
 
-    for (size_t step = 0; step < limit; step++) {
-        result->steps_taken++;
-        size_t new_conclusions =
-            forward_chain_step(engine, source, result, &capacity);
+    /* Expand from the source, then only from newly derived conclusions
+     * (frontier) on subsequent steps to avoid re-deriving the whole set. */
+    result->steps_taken++;
+    forward_chain_step(engine, source, result, &capacity);
+    size_t frontier_start = 0;
 
-        /* Also expand from freshly derived conclusions */
-        size_t before = result->derived_count;
-        for (size_t i = 0; i < before; i++) {
+    for (size_t step = 1; step < limit; step++) {
+        size_t frontier_end = result->derived_count;
+        if (frontier_start == frontier_end) break;
+
+        result->steps_taken++;
+        for (size_t i = frontier_start; i < frontier_end; i++) {
             atom_handle_t derived_link = result->derived_atoms[i];
             atom_handle_t next_source =
                 atomspace_get_outgoing_at(engine->atomspace, derived_link, 1);
             if (next_source != ATOM_HANDLE_INVALID) {
-                new_conclusions += forward_chain_step(
-                    engine, next_source, result, &capacity);
+                forward_chain_step(engine, next_source, result, &capacity);
             }
         }
-
-        if (new_conclusions == 0) break;
+        frontier_start = frontier_end;
     }
 
     result->total_time_ms = (double)(now_ms() - start);
