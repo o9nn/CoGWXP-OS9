@@ -226,10 +226,9 @@ static cog_result_t graph_api_request(
 
 COGUTIL_API cog_result_t msgraph_init(
     const msgraph_config_t* config,
-    atomspace_t atomspace,
     msgraph_context_t* ctx
 ) {
-    if (!config || !atomspace || !ctx) return COG_ERROR_INVALID_PARAM;
+    if (!config || !ctx) return COG_ERROR_INVALID_PARAM;
     
     msgraph_context_t c = calloc(1, sizeof(struct msgraph_context));
     if (!c) return COG_ERROR_MEMORY;
@@ -239,13 +238,11 @@ COGUTIL_API cog_result_t msgraph_init(
     c->config.client_id = strdup_safe(config->client_id);
     c->config.client_secret = strdup_safe(config->client_secret);
     c->config.redirect_uri = strdup_safe(config->redirect_uri);
-    c->config.scopes = strdup_safe(config->scopes);
-    c->config.enable_caching = config->enable_caching;
+    c->config.scope = strdup_safe(config->scope);
+    c->config.enable_cache = config->enable_cache;
     c->config.cache_ttl_seconds = config->cache_ttl_seconds;
-    c->config.enable_change_notifications = config->enable_change_notifications;
-    c->config.notification_url = strdup_safe(config->notification_url);
     
-    c->atomspace = atomspace;
+    c->atomspace = config->target_atomspace;
     
     /* Initialize mutexes */
     pthread_mutex_init(&c->token_mutex, NULL);
@@ -295,8 +292,7 @@ COGUTIL_API void msgraph_shutdown(msgraph_context_t ctx) {
     free_safe((void*)ctx->config.client_id);
     free_safe((void*)ctx->config.client_secret);
     free_safe((void*)ctx->config.redirect_uri);
-    free_safe((void*)ctx->config.scopes);
-    free_safe((void*)ctx->config.notification_url);
+    free_safe((void*)ctx->config.scope);
     
     /* Free other resources */
     free_safe(ctx->access_token);
@@ -326,28 +322,28 @@ COGUTIL_API cog_result_t msgraph_get_entity(
     /* Build endpoint based on type */
     char endpoint[256];
     switch (type) {
-        case MSGRAPH_ENTITY_USER:
+        case MSGRAPH_TYPE_USER:
             snprintf(endpoint, sizeof(endpoint), "/users/%s", entity_id);
             break;
-        case MSGRAPH_ENTITY_GROUP:
+        case MSGRAPH_TYPE_GROUP:
             snprintf(endpoint, sizeof(endpoint), "/groups/%s", entity_id);
             break;
-        case MSGRAPH_ENTITY_DRIVE_ITEM:
+        case MSGRAPH_TYPE_DRIVE_ITEM:
             snprintf(endpoint, sizeof(endpoint), "/me/drive/items/%s", entity_id);
             break;
-        case MSGRAPH_ENTITY_MESSAGE:
+        case MSGRAPH_TYPE_MESSAGE:
             snprintf(endpoint, sizeof(endpoint), "/me/messages/%s", entity_id);
             break;
-        case MSGRAPH_ENTITY_EVENT:
+        case MSGRAPH_TYPE_EVENT:
             snprintf(endpoint, sizeof(endpoint), "/me/events/%s", entity_id);
             break;
-        case MSGRAPH_ENTITY_SITE:
+        case MSGRAPH_TYPE_SITE:
             snprintf(endpoint, sizeof(endpoint), "/sites/%s", entity_id);
             break;
-        case MSGRAPH_ENTITY_TEAM:
+        case MSGRAPH_TYPE_TEAM:
             snprintf(endpoint, sizeof(endpoint), "/teams/%s", entity_id);
             break;
-        case MSGRAPH_ENTITY_CHANNEL:
+        case MSGRAPH_TYPE_CHANNEL:
             snprintf(endpoint, sizeof(endpoint), "/teams/%s", entity_id);
             break;
         default:
@@ -404,13 +400,13 @@ COGUTIL_API cog_result_t msgraph_list_entities(
     const char* base_endpoint;
     
     switch (type) {
-        case MSGRAPH_ENTITY_USER: base_endpoint = "/users"; break;
-        case MSGRAPH_ENTITY_GROUP: base_endpoint = "/groups"; break;
-        case MSGRAPH_ENTITY_DRIVE_ITEM: base_endpoint = "/me/drive/root/children"; break;
-        case MSGRAPH_ENTITY_MESSAGE: base_endpoint = "/me/messages"; break;
-        case MSGRAPH_ENTITY_EVENT: base_endpoint = "/me/events"; break;
-        case MSGRAPH_ENTITY_SITE: base_endpoint = "/sites"; break;
-        case MSGRAPH_ENTITY_TEAM: base_endpoint = "/me/joinedTeams"; break;
+        case MSGRAPH_TYPE_USER: base_endpoint = "/users"; break;
+        case MSGRAPH_TYPE_GROUP: base_endpoint = "/groups"; break;
+        case MSGRAPH_TYPE_DRIVE_ITEM: base_endpoint = "/me/drive/root/children"; break;
+        case MSGRAPH_TYPE_MESSAGE: base_endpoint = "/me/messages"; break;
+        case MSGRAPH_TYPE_EVENT: base_endpoint = "/me/events"; break;
+        case MSGRAPH_TYPE_SITE: base_endpoint = "/sites"; break;
+        case MSGRAPH_TYPE_TEAM: base_endpoint = "/me/joinedTeams"; break;
         default: return COG_ERROR_INVALID_PARAM;
     }
     
@@ -493,44 +489,44 @@ COGUTIL_API cog_result_t msgraph_entity_to_atom(
     /* Determine the entity type category name */
     const char* type_name = NULL;
     switch (entity->type) {
-        case MSGRAPH_ENTITY_USER:    type_name = "MSGraph:User"; break;
-        case MSGRAPH_ENTITY_GROUP:   type_name = "MSGraph:Group"; break;
-        case MSGRAPH_ENTITY_TEAM:    type_name = "MSGraph:Team"; break;
-        case MSGRAPH_ENTITY_CHANNEL: type_name = "MSGraph:Channel"; break;
-        case MSGRAPH_ENTITY_DRIVE:   type_name = "MSGraph:Drive"; break;
-        case MSGRAPH_ENTITY_SITE:    type_name = "MSGraph:Site"; break;
-        case MSGRAPH_ENTITY_MESSAGE: type_name = "MSGraph:Message"; break;
-        case MSGRAPH_ENTITY_EVENT:   type_name = "MSGraph:Event"; break;
-        default:                     type_name = "MSGraph:Entity"; break;
+        case MSGRAPH_TYPE_USER:    type_name = "MSGraph:User"; break;
+        case MSGRAPH_TYPE_GROUP:   type_name = "MSGraph:Group"; break;
+        case MSGRAPH_TYPE_TEAM:    type_name = "MSGraph:Team"; break;
+        case MSGRAPH_TYPE_CHANNEL: type_name = "MSGraph:Channel"; break;
+        case MSGRAPH_TYPE_DRIVE:   type_name = "MSGraph:Drive"; break;
+        case MSGRAPH_TYPE_SITE:    type_name = "MSGraph:Site"; break;
+        case MSGRAPH_TYPE_MESSAGE: type_name = "MSGraph:Message"; break;
+        case MSGRAPH_TYPE_EVENT:   type_name = "MSGraph:Event"; break;
+        default:                   type_name = "MSGraph:Entity"; break;
     }
     
     /* Create the entity node with truth value <1.0, 0.9> */
     const char* name = entity->display_name ? entity->display_name : entity->id;
     truth_value_t entity_tv = {.strength = 1.0, .confidence = 0.9};
-    atom_handle_t entity_atom = atomspace_add_node(as, ATOM_TYPE_CONCEPT, name, &entity_tv);
+    atom_handle_t entity_atom = atomspace_add_node_tv(as, ATOM_TYPE_CONCEPT_NODE, name, entity_tv);
     if (entity_atom == ATOM_HANDLE_INVALID) return COG_ERROR_MEMORY;
     
     /* Create the type category node */
-    atom_handle_t category = atomspace_add_node(as, ATOM_TYPE_CONCEPT, type_name, NULL);
+    atom_handle_t category = atomspace_add_node(as, ATOM_TYPE_CONCEPT_NODE, type_name);
     if (category != ATOM_HANDLE_INVALID) {
         /* InheritanceLink: entity -> category  TV <1.0, 1.0> */
         atom_handle_t inh_out[2] = {entity_atom, category};
         truth_value_t inh_tv = {.strength = 1.0, .confidence = 1.0};
-        atomspace_add_link(as, ATOM_TYPE_INHERITANCE, inh_out, 2, &inh_tv);
+        atomspace_add_link_tv(as, ATOM_TYPE_INHERITANCE_LINK, inh_out, 2, inh_tv);
     }
     
     /* Store entity ID as an EvaluationLink property */
     if (entity->id) {
-        atom_handle_t id_pred = atomspace_add_node(as, ATOM_TYPE_PREDICATE, "msgraph:id", NULL);
+        atom_handle_t id_pred = atomspace_add_node(as, ATOM_TYPE_PREDICATE_NODE, "msgraph:id");
         char id_name[256];
         snprintf(id_name, sizeof(id_name), "id:%s", entity->id);
-        atom_handle_t id_val = atomspace_add_node(as, ATOM_TYPE_CONCEPT, id_name, NULL);
+        atom_handle_t id_val = atomspace_add_node(as, ATOM_TYPE_CONCEPT_NODE, id_name);
         if (id_pred != ATOM_HANDLE_INVALID && id_val != ATOM_HANDLE_INVALID) {
             atom_handle_t list_out[2] = {entity_atom, id_val};
-            atom_handle_t list_link = atomspace_add_link(as, ATOM_TYPE_LIST, list_out, 2, NULL);
+            atom_handle_t list_link = atomspace_add_link(as, ATOM_TYPE_LIST_LINK, list_out, 2);
             if (list_link != ATOM_HANDLE_INVALID) {
                 atom_handle_t eval_out[2] = {id_pred, list_link};
-                atomspace_add_link(as, ATOM_TYPE_EVALUATION, eval_out, 2, NULL);
+                atomspace_add_link(as, ATOM_TYPE_EVALUATION_LINK, eval_out, 2);
             }
         }
     }
@@ -570,22 +566,22 @@ COGUTIL_API cog_result_t msgraph_atom_to_entity(
         const char* category;
         msgraph_entity_type_t type;
     } type_map[] = {
-        {"MSGraph:User",    MSGRAPH_ENTITY_USER},
-        {"MSGraph:Group",   MSGRAPH_ENTITY_GROUP},
-        {"MSGraph:Team",    MSGRAPH_ENTITY_TEAM},
-        {"MSGraph:Channel", MSGRAPH_ENTITY_CHANNEL},
-        {"MSGraph:Drive",   MSGRAPH_ENTITY_DRIVE},
-        {"MSGraph:Site",    MSGRAPH_ENTITY_SITE},
-        {"MSGraph:Message", MSGRAPH_ENTITY_MESSAGE},
-        {"MSGraph:Event",   MSGRAPH_ENTITY_EVENT},
+        {"MSGraph:User",    MSGRAPH_TYPE_USER},
+        {"MSGraph:Group",   MSGRAPH_TYPE_GROUP},
+        {"MSGraph:Team",    MSGRAPH_TYPE_TEAM},
+        {"MSGraph:Channel", MSGRAPH_TYPE_CHANNEL},
+        {"MSGraph:Drive",   MSGRAPH_TYPE_DRIVE},
+        {"MSGraph:Site",    MSGRAPH_TYPE_SITE},
+        {"MSGraph:Message", MSGRAPH_TYPE_MESSAGE},
+        {"MSGraph:Event",   MSGRAPH_TYPE_EVENT},
     };
     
-    entity->type = MSGRAPH_ENTITY_USER; /* default */
+    entity->type = MSGRAPH_TYPE_USER; /* default */
     for (int i = 0; i < 8; i++) {
-        atom_handle_t cat = atomspace_get_node(as, ATOM_TYPE_CONCEPT, type_map[i].category);
+        atom_handle_t cat = atomspace_get_node(as, ATOM_TYPE_CONCEPT_NODE, type_map[i].category);
         if (cat != ATOM_HANDLE_INVALID) {
             atom_handle_t inh_out[2] = {atom, cat};
-            atom_handle_t inh = atomspace_get_link(as, ATOM_TYPE_INHERITANCE, inh_out, 2);
+            atom_handle_t inh = atomspace_get_link(as, ATOM_TYPE_INHERITANCE_LINK, inh_out, 2);
             if (inh != ATOM_HANDLE_INVALID) {
                 entity->type = type_map[i].type;
                 break;

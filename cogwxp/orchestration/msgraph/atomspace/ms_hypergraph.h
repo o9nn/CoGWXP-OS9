@@ -18,6 +18,7 @@
 
 #include "../../../opencog/atomspace/atomspace.h"
 #include "../../../opencog/cogutil/cogutil.h"
+#include <time.h>
 
 #ifdef __cplusplus
 extern "C" {
@@ -155,6 +156,27 @@ typedef struct {
  * MSHyperGraph context
  */
 typedef struct msgraph_context* msgraph_context_t;
+
+/**
+ * MS Graph entity (maps a Graph API resource to an AtomSpace atom)
+ */
+typedef struct {
+    const char* id;                 /**< MS Graph entity ID */
+    const char* display_name;       /**< Human-readable display name */
+    char* properties_json;          /**< Full properties as JSON string */
+    msgraph_entity_type_t type;     /**< Entity type */
+    time_t last_modified;           /**< Last modification timestamp */
+} msgraph_entity_t;
+
+/**
+ * MS Graph operation statistics
+ */
+typedef struct {
+    uint64_t api_calls;             /**< Total Graph API calls made */
+    uint64_t entities_fetched;      /**< Total entities fetched */
+    uint64_t atoms_created;         /**< Total atoms created in AtomSpace */
+    uint64_t sync_operations;       /**< Total sync operations performed */
+} msgraph_stats_t;
 
 /*===========================================================================
  * MSHyperGraph Core API
