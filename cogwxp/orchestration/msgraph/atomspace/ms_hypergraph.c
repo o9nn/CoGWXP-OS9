@@ -228,7 +228,7 @@ COGUTIL_API cog_result_t msgraph_init(
     const msgraph_config_t* config,
     msgraph_context_t* ctx
 ) {
-    if (!config || !ctx) return COG_ERROR_INVALID_PARAM;
+    if (!config || !config->target_atomspace || !ctx) return COG_ERROR_INVALID_PARAM;
     
     msgraph_context_t c = calloc(1, sizeof(struct msgraph_context));
     if (!c) return COG_ERROR_MEMORY;
