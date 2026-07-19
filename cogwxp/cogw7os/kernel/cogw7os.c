@@ -285,6 +285,9 @@ COGUTIL_API void cogw7_kernel_destroy(cogw7_kernel_t kernel) {
     pthread_rwlock_unlock(&kernel->process_lock);
     
     /* Destroy services */
+    for (size_t i = 0; i < kernel->service_count; i++) {
+        COG_FREE(kernel->services[i].name);
+    }
     COG_FREE(kernel->services);
     
     /* Destroy agents */

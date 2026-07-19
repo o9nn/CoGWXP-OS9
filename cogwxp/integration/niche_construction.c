@@ -135,6 +135,10 @@ COGUTIL_API void niche_engine_shutdown(niche_engine_t engine) {
     /* Free skills */
     for (size_t i = 0; i < engine->skill_count; i++) {
         if (engine->skills[i]) {
+            if (engine->skills[i]->canonical_glyph) {
+                free((void*)engine->skills[i]->canonical_glyph->name);
+                free(engine->skills[i]->canonical_glyph);
+            }
             free(engine->skills[i]->name);
             free(engine->skills[i]);
         }

@@ -253,6 +253,16 @@ COGUTIL_API void cz_destroy_agent(cz_agent_t agent) {
     /* Free learning buffer */
     free(agent->learning.replay_buffer);
 
+    /* Free goal descriptions */
+    for (size_t i = 0; i < agent->planning.goal_count; i++) {
+        free((void*)agent->planning.goals[i].description);
+    }
+
+    /* Free plan action arrays */
+    for (size_t i = 0; i < agent->planning.plan_count; i++) {
+        free(agent->planning.plans[i].actions);
+    }
+
     /* Free memory content strings */
     for (size_t i = 0; i < agent->memory.memory_count; i++) {
         free((void*)agent->memory.memories[i].content);
