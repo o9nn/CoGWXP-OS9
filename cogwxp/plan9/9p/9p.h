@@ -14,6 +14,14 @@
 #include "../../opencog/cogutil/cogutil.h"
 #include <sys/types.h>
 
+/* ssize_t is a POSIX type not provided by MSVC */
+#ifdef COGUTIL_PLATFORM_NT
+    #ifndef _SSIZE_T_DEFINED
+    #define _SSIZE_T_DEFINED
+    typedef __int64 ssize_t;
+    #endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
