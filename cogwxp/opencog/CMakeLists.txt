@@ -78,6 +78,7 @@ if(UUID_FOUND)
 endif()
 
 if(WIN32)
+    target_compile_definitions(cogutil PRIVATE COGUTIL_EXPORTS)
     target_link_libraries(cogutil PRIVATE ws2_32 kernel32)
 endif()
 
