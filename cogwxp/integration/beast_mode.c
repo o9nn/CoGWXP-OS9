@@ -66,7 +66,10 @@ static uint64_t get_time_ms(void) {
     return (uint64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 #else
     struct timespec ts;
-    /* Fallback for platforms without a monotonic clock API in this build. */
+    /*
+     * C11 fallback for builds without a monotonic clock API; TIME_UTC is
+     * wall-clock time and may move backwards if the system clock changes.
+     */
     timespec_get(&ts, TIME_UTC);
     return (uint64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
 #endif
