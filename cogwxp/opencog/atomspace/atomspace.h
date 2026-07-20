@@ -131,6 +131,11 @@ typedef struct atom {
     attention_value_t attention_value;
     uint64_t flags;
     void* user_data;
+
+    /* Internal bookkeeping (managed by the AtomSpace — do not modify) */
+    atom_handle_t* incoming;        /* Links referencing this atom */
+    size_t incoming_count;
+    size_t incoming_capacity;
 } atom_t;
 
 /*===========================================================================
@@ -211,6 +216,11 @@ COGUTIL_API bool atomspace_remove_atom_recursive(atomspace_t as, atom_handle_t h
 COGUTIL_API truth_value_t atomspace_get_tv(atomspace_t as, atom_handle_t handle);
 COGUTIL_API void          atomspace_set_tv(atomspace_t as, atom_handle_t handle, truth_value_t tv);
 COGUTIL_API void          atomspace_merge_tv(atomspace_t as, atom_handle_t handle, truth_value_t tv);
+
+/* Truth value helpers */
+COGUTIL_API truth_value_t tv_simple(double strength, double confidence);
+COGUTIL_API truth_value_t tv_count(double strength, double confidence, uint64_t count);
+COGUTIL_API truth_value_t tv_merge(const truth_value_t* a, const truth_value_t* b);
 
 /* Attention value operations */
 COGUTIL_API attention_value_t atomspace_get_av(atomspace_t as, atom_handle_t handle);
@@ -301,6 +311,18 @@ typedef struct atomspace_stats {
 } atomspace_stats_t;
 
 COGUTIL_API void atomspace_get_stats(atomspace_t as, atomspace_stats_t* stats);
+COGUTIL_API size_t atomspace_size(atomspace_t as);
+
+/* Retrieve all atoms of a given type (optionally including subtypes).
+ * On success *atoms is a malloc'd array the caller frees with
+ * atomspace_query_results_free(). */
+COGUTIL_API cog_result_t atomspace_get_atoms_by_type(
+    atomspace_t as,
+    atom_type_t type,
+    bool include_subtypes,
+    atom_handle_t** atoms,
+    size_t* count
+);
 
 /*===========================================================================
  * Serialization

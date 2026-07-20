@@ -75,29 +75,29 @@ set(COGW7OS_HEADERS
 add_library(cogw7os ${COGW7OS_SOURCES})
 target_link_libraries(cogw7os PUBLIC Threads::Threads)
 
-if(COGUTIL_LIB)
-    target_link_libraries(cogw7os PUBLIC ${COGUTIL_LIB})
+if(TARGET cogutil)
+    target_link_libraries(cogw7os PUBLIC cogutil)
 endif()
 
-if(ATOMSPACE_LIB)
-    target_link_libraries(cogw7os PUBLIC ${ATOMSPACE_LIB})
+if(TARGET atomspace)
+    target_link_libraries(cogw7os PUBLIC atomspace)
 endif()
 
-if(PLN_LIB)
-    target_link_libraries(cogw7os PUBLIC ${PLN_LIB})
+if(TARGET pln)
+    target_link_libraries(cogw7os PUBLIC pln)
 endif()
 
-if(COGSERVER_LIB)
-    target_link_libraries(cogw7os PUBLIC ${COGSERVER_LIB})
+if(TARGET cogserver)
+    target_link_libraries(cogw7os PUBLIC cogserver)
 endif()
 
-if(ENABLE_9P_INTEGRATION AND P9_LIB)
-    target_link_libraries(cogw7os PUBLIC ${P9_LIB})
+if(ENABLE_9P_INTEGRATION AND TARGET p9)
+    target_link_libraries(cogw7os PUBLIC p9)
     target_compile_definitions(cogw7os PRIVATE ENABLE_9P_INTEGRATION=1)
 endif()
 
-if(ENABLE_DIS_INTEGRATION AND DIS_LIB)
-    target_link_libraries(cogw7os PUBLIC ${DIS_LIB})
+if(ENABLE_DIS_INTEGRATION AND TARGET dis)
+    target_link_libraries(cogw7os PUBLIC dis)
     target_compile_definitions(cogw7os PRIVATE ENABLE_DIS_INTEGRATION=1)
 endif()
 

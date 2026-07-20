@@ -45,6 +45,9 @@ set(P9_HEADERS
 
 add_library(p9 ${P9_SOURCES})
 target_link_libraries(p9 PRIVATE Threads::Threads)
+if(TARGET cogutil)
+    target_link_libraries(p9 PUBLIC cogutil)
+endif()
 
 if(ENABLE_SSL)
     target_link_libraries(p9 PRIVATE OpenSSL::SSL OpenSSL::Crypto)

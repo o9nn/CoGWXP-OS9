@@ -358,3 +358,34 @@ jobs:
           name: memcheck-results
           path: build/Testing/Temporary/MemoryChecker.*.log
           retention-days: 30
+
+  # ---------------------------------------------------------------------------
+  # Single required status check: succeeds only when every dependency succeeds
+  # (experimental Windows variants report success via continue-on-error).
+  # Use this job as the sole required check in branch protection.
+  # ---------------------------------------------------------------------------
+  ci-success:
+    name: CI Success
+    runs-on: ubuntu-24.04
+    if: always()
+    needs:
+      - build-and-test
+      - coverage
+      - static-analysis
+      - memcheck
+    permissions: {}
+    steps:
+      - name: Check all job results
+        run: |
+          echo "build-and-test:  ${{ needs.build-and-test.result }}"
+          echo "coverage:        ${{ needs.coverage.result }}"
+          echo "static-analysis: ${{ needs.static-analysis.result }}"
+          echo "memcheck:        ${{ needs.memcheck.result }}"
+          if [ "${{ needs.build-and-test.result }}" != "success" ] || \
+             [ "${{ needs.coverage.result }}" != "success" ] || \
+             [ "${{ needs.static-analysis.result }}" != "success" ] || \
+             [ "${{ needs.memcheck.result }}" != "success" ]; then
+            echo "One or more required jobs failed."
+            exit 1
+          fi
+          echo "All required jobs succeeded."

@@ -343,27 +343,45 @@ COGUTIL_API cog_result_t cogw7_kernel_init(cogw7_init_config_t* config);
 COGUTIL_API bool         cogw7_kernel_is_initialized(void);
 
 #ifndef _COGW7_INTERNAL
-/* Public API function signatures (different from internal impl) */
-COGUTIL_API void         cogw7_kernel_shutdown(void);
+/* Public API function signatures (matching the kernel implementation) */
+
+/*===========================================================================
+ * Kernel Lifecycle (handle-based API)
+ *===========================================================================*/
+
+COGUTIL_API cog_result_t cogw7_kernel_create(
+    const cogw7_config_t* config,
+    cogw7_kernel_t* kernel
+);
+COGUTIL_API void         cogw7_kernel_destroy(cogw7_kernel_t kernel);
+COGUTIL_API cog_result_t cogw7_kernel_boot(cogw7_kernel_t kernel);
+COGUTIL_API cog_result_t cogw7_kernel_shutdown(cogw7_kernel_t kernel);
+COGUTIL_API cogw7_kernel_state_t cogw7_kernel_get_state(cogw7_kernel_t kernel);
+COGUTIL_API cog_result_t cogw7_get_stats(cogw7_kernel_t kernel, cogw7_stats_t* stats);
+COGUTIL_API atomspace_t  cogw7_get_atomspace(cogw7_kernel_t kernel);
+COGUTIL_API pln_context_t cogw7_get_pln(cogw7_kernel_t kernel);
 
 /*===========================================================================
  * Process Management
  *===========================================================================*/
 
 COGUTIL_API cog_result_t cogw7_process_create(
+    cogw7_kernel_t kernel,
     const char* name,
-    const char* command_line,
-    cogw7_handle_t* process_handle
+    uint32_t parent_pid,
+    uint32_t* pid
 );
 
 COGUTIL_API cog_result_t cogw7_process_terminate(
-    cogw7_handle_t process_handle,
-    uint32_t exit_code
+    cogw7_kernel_t kernel,
+    uint32_t pid,
+    int exit_code
 );
 
 COGUTIL_API cog_result_t cogw7_process_get_info(
-    cogw7_handle_t process_handle,
-    cogw7_process_t* info
+    cogw7_kernel_t kernel,
+    uint32_t pid,
+    cogw7_process_info_t* info
 );
 
 COGUTIL_API cog_result_t cogw7_process_set_atomspace(

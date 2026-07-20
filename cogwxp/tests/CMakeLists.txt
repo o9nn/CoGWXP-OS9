@@ -16,11 +16,11 @@ find_package(Threads REQUIRED)
 macro(cogwxp_add_test TARGET_NAME SOURCES LABELS TIMEOUT)
     add_executable(${TARGET_NAME} ${SOURCES})
     target_link_libraries(${TARGET_NAME}
-        cogwxp-cogutil
-        cogwxp-atomspace
-        cogwxp-pln
-        cogwxp-9p
-        cogwxp-cogw7os
+        cogutil
+        atomspace
+        pln
+        p9
+        cogw7os
         Threads::Threads
         m
     )
@@ -45,11 +45,11 @@ add_executable(cogwxp-tests
     test_cogwxp.c
 )
 target_link_libraries(cogwxp-tests
-    cogwxp-cogutil
-    cogwxp-atomspace
-    cogwxp-pln
-    cogwxp-9p
-    cogwxp-cogw7os
+    cogutil
+    atomspace
+    pln
+    p9
+    cogw7os
     Threads::Threads
 )
 target_include_directories(cogwxp-tests PRIVATE
@@ -65,9 +65,10 @@ add_executable(test-niche-beast
     test_niche_beast.c
 )
 target_link_libraries(test-niche-beast
-    cogwxp-cogutil
-    cogwxp-atomspace
-    cogwxp-pln
+    cogutil
+    atomspace
+    pln
+    cogwxp_os
     Threads::Threads
     m
 )
@@ -138,9 +139,9 @@ if(TARGET cogwxp-orchestration OR TARGET atenspace OR TARGET orchestration)
         endif()
     endforeach()
     target_link_libraries(test-frameworks PRIVATE
-        cogwxp-cogutil
-        cogwxp-atomspace
-        cogwxp-pln
+        cogutil
+        atomspace
+        pln
         Threads::Threads
         m
     )

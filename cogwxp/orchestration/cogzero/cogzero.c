@@ -156,11 +156,9 @@ COGUTIL_API cog_result_t cz_init(cz_context_t* ctx) {
 COGUTIL_API void cz_shutdown(cz_context_t ctx) {
     if (!ctx) return;
 
-    /* Destroy all agents */
-    for (size_t i = 0; i < ctx->agent_count; i++) {
-        if (ctx->agents[i]) {
-            cz_destroy_agent(ctx->agents[i]);
-        }
+    /* Destroy all agents (cz_destroy_agent removes itself from the array) */
+    while (ctx->agent_count > 0) {
+        cz_destroy_agent(ctx->agents[0]);
     }
 
     free(ctx);
@@ -239,8 +237,31 @@ COGUTIL_API void cz_destroy_agent(cz_agent_t agent) {
         cz_stop(agent);
     }
 
+    /* Detach from owning context so cz_shutdown doesn't double-free */
+    if (agent->ctx) {
+        cz_context_t ctx = agent->ctx;
+        for (size_t i = 0; i < ctx->agent_count; i++) {
+            if (ctx->agents[i] == agent) {
+                ctx->agents[i] = ctx->agents[ctx->agent_count - 1];
+                ctx->agents[ctx->agent_count - 1] = NULL;
+                ctx->agent_count--;
+                break;
+            }
+        }
+    }
+
     /* Free learning buffer */
     free(agent->learning.replay_buffer);
+
+    /* Free goal descriptions */
+    for (size_t i = 0; i < agent->planning.goal_count; i++) {
+        free((void*)agent->planning.goals[i].description);
+    }
+
+    /* Free plan action arrays */
+    for (size_t i = 0; i < agent->planning.plan_count; i++) {
+        free(agent->planning.plans[i].actions);
+    }
 
     /* Free memory content strings */
     for (size_t i = 0; i < agent->memory.memory_count; i++) {

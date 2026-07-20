@@ -77,16 +77,16 @@ if(ENABLE_MSGRAPH)
         target_link_libraries(msgraph PUBLIC CURL::libcurl)
     endif()
     
-    if(COGUTIL_LIB)
-        target_link_libraries(msgraph PUBLIC ${COGUTIL_LIB})
+    if(TARGET cogutil)
+        target_link_libraries(msgraph PUBLIC cogutil)
     endif()
     
-    if(ATOMSPACE_LIB)
-        target_link_libraries(msgraph PUBLIC ${ATOMSPACE_LIB})
+    if(TARGET atomspace)
+        target_link_libraries(msgraph PUBLIC atomspace)
     endif()
     
-    if(P9_LIB)
-        target_link_libraries(msgraph PUBLIC ${P9_LIB})
+    if(TARGET p9)
+        target_link_libraries(msgraph PUBLIC p9)
     endif()
     
     set_target_properties(msgraph PROPERTIES
@@ -119,16 +119,16 @@ if(ENABLE_COGPILOT)
         target_link_libraries(cogpilot PUBLIC CURL::libcurl)
     endif()
     
-    if(COGUTIL_LIB)
-        target_link_libraries(cogpilot PUBLIC ${COGUTIL_LIB})
+    if(TARGET cogutil)
+        target_link_libraries(cogpilot PUBLIC cogutil)
     endif()
     
-    if(ATOMSPACE_LIB)
-        target_link_libraries(cogpilot PUBLIC ${ATOMSPACE_LIB})
+    if(TARGET atomspace)
+        target_link_libraries(cogpilot PUBLIC atomspace)
     endif()
     
-    if(COGSERVER_LIB)
-        target_link_libraries(cogpilot PUBLIC ${COGSERVER_LIB})
+    if(TARGET cogserver)
+        target_link_libraries(cogpilot PUBLIC cogserver)
     endif()
     
     if(ENABLE_MSGRAPH)
@@ -163,12 +163,12 @@ if(ENABLE_OSDEPLOY)
     add_library(osdeploy ${OSDEPLOY_SOURCES})
     target_link_libraries(osdeploy PUBLIC Threads::Threads)
     
-    if(COGUTIL_LIB)
-        target_link_libraries(osdeploy PUBLIC ${COGUTIL_LIB})
+    if(TARGET cogutil)
+        target_link_libraries(osdeploy PUBLIC cogutil)
     endif()
     
-    if(ATOMSPACE_LIB)
-        target_link_libraries(osdeploy PUBLIC ${ATOMSPACE_LIB})
+    if(TARGET atomspace)
+        target_link_libraries(osdeploy PUBLIC atomspace)
     endif()
     
     if(ENABLE_COGPILOT)
@@ -204,12 +204,12 @@ if(ENABLE_AZURITE)
     add_library(azurite ${AZURITE_SOURCES})
     target_link_libraries(azurite PUBLIC Threads::Threads)
     
-    if(COGUTIL_LIB)
-        target_link_libraries(azurite PUBLIC ${COGUTIL_LIB})
+    if(TARGET cogutil)
+        target_link_libraries(azurite PUBLIC cogutil)
     endif()
     
-    if(ATOMSPACE_LIB)
-        target_link_libraries(azurite PUBLIC ${ATOMSPACE_LIB})
+    if(TARGET atomspace)
+        target_link_libraries(azurite PUBLIC atomspace)
     endif()
     
     if(ENABLE_COGPILOT)
@@ -244,12 +244,12 @@ if(ENABLE_TOOLCHAINS)
     add_library(toolchains ${TOOLCHAINS_SOURCES})
     target_link_libraries(toolchains PUBLIC Threads::Threads)
     
-    if(COGUTIL_LIB)
-        target_link_libraries(toolchains PUBLIC ${COGUTIL_LIB})
+    if(TARGET cogutil)
+        target_link_libraries(toolchains PUBLIC cogutil)
     endif()
     
-    if(ATOMSPACE_LIB)
-        target_link_libraries(toolchains PUBLIC ${ATOMSPACE_LIB})
+    if(TARGET atomspace)
+        target_link_libraries(toolchains PUBLIC atomspace)
     endif()
     
     if(ENABLE_COGPILOT)
@@ -262,6 +262,49 @@ if(ENABLE_TOOLCHAINS)
         PUBLIC_HEADER "${TOOLCHAINS_HEADERS}"
     )
 endif()
+
+# ===========================================================================
+# ATenSpace / CogZero / HyperMind Frameworks
+# ===========================================================================
+
+set(ATENSPACE_SOURCES
+    atenspace/atenspace.c
+    cogzero/cogzero.c
+    hypermind/hypermind.c
+)
+
+set(ATENSPACE_HEADERS
+    atenspace/atenspace.h
+    cogzero/cogzero.h
+    hypermind/hypermind.h
+)
+
+add_library(atenspace ${ATENSPACE_SOURCES})
+target_link_libraries(atenspace PUBLIC Threads::Threads m)
+
+if(TARGET cogutil)
+    target_link_libraries(atenspace PUBLIC cogutil)
+elseif(TARGET cogutil)
+    target_link_libraries(atenspace PUBLIC cogutil)
+endif()
+
+if(TARGET atomspace)
+    target_link_libraries(atenspace PUBLIC atomspace)
+elseif(TARGET atomspace)
+    target_link_libraries(atenspace PUBLIC atomspace)
+endif()
+
+if(TARGET pln)
+    target_link_libraries(atenspace PUBLIC pln)
+elseif(PLN_LIB)
+    target_link_libraries(atenspace PUBLIC pln)
+endif()
+
+set_target_properties(atenspace PROPERTIES
+    VERSION ${PROJECT_VERSION}
+    SOVERSION 1
+    PUBLIC_HEADER "${ATENSPACE_HEADERS}"
+)
 
 # ===========================================================================
 # Unified Orchestration Library
@@ -326,6 +369,7 @@ target_link_libraries(cogwxp-orchestrate PRIVATE orchestration)
 include(GNUInstallDirs)
 
 set(INSTALL_TARGETS orchestration cogwxp-orchestrate)
+list(APPEND INSTALL_TARGETS atenspace)
 
 if(ENABLE_MSGRAPH)
     list(APPEND INSTALL_TARGETS msgraph)

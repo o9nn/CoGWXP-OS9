@@ -100,12 +100,11 @@ COGUTIL_API cog_result_t cogwxp_orchestration_init(
     
     /* Initialize AtomSpace */
     printf("  [1/8] Initializing AtomSpace...\n");
-    atomspace_config_t as_config = {0};
-    result = atomspace_create(&as_config, &o->atomspace);
-    if (result != COG_OK) {
+    o->atomspace = atomspace_create();
+    if (!o->atomspace) {
         printf("    FATAL: AtomSpace initialization failed\n");
         free(o);
-        return result;
+        return COG_ERROR_MEMORY;
     }
     printf("    AtomSpace created successfully\n");
     

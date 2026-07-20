@@ -136,6 +136,8 @@ struct p9_server {
 };
 typedef struct p9_server p9_server_t;
 
+COGUTIL_API cog_result_t p9_server_stop(p9_server_t* server);
+
 /*===========================================================================
  * Message Encoding/Decoding
  *===========================================================================*/
@@ -239,6 +241,14 @@ static p9_file_t* file_create(const char* name, uint32_t mode) {
 
 static void file_destroy(p9_file_t* f) {
     if (!f) return;
+    
+    /* Recursively destroy children */
+    p9_file_t* child = f->children;
+    while (child) {
+        p9_file_t* next = child->next;
+        file_destroy(child);
+        child = next;
+    }
     
     COG_FREE(f->name);
     COG_FREE(f->uid);

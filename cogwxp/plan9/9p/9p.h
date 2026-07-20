@@ -189,11 +189,11 @@ typedef struct {
 #ifndef _P9_INTERNAL
 typedef struct p9_server* p9_server_t;
 
-COGUTIL_API p9_server_t p9_server_create(p9_callbacks_t* callbacks);
-COGUTIL_API void        p9_server_destroy(p9_server_t server);
-COGUTIL_API cog_result_t p9_server_listen(p9_server_t server, const char* address, uint16_t port);
-COGUTIL_API cog_result_t p9_server_listen_unix(p9_server_t server, const char* path);
-COGUTIL_API void        p9_server_stop(p9_server_t server);
+COGUTIL_API cog_result_t p9_server_create(const p9_server_config_t* config, p9_server_t* server);
+COGUTIL_API void         p9_server_destroy(p9_server_t server);
+COGUTIL_API cog_result_t p9_server_start(p9_server_t server);
+COGUTIL_API cog_result_t p9_server_stop(p9_server_t server);
+COGUTIL_API cog_result_t p9_server_set_atomspace(p9_server_t server, atomspace_t as);
 #endif /* _P9_INTERNAL */
 
 /* Response helpers */
