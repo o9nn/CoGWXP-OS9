@@ -9,14 +9,10 @@
  */
 
 #include "cogutil.h"
-#include <stdlib.h>
-#include <string.h>
-#include <stdio.h>
-#include <stdarg.h>
-#include <pthread.h>
-#include <time.h>
-#include <errno.h>
 
+/* Windows-specific headers must come before <pthread.h> to ensure a
+ * single canonical definition of struct timeval before pthreads-win32
+ * has a chance to define it, preventing C2011 "type redefinition". */
 #if defined(_WIN32)
 #ifndef WIN32_LEAN_AND_MEAN
 #define WIN32_LEAN_AND_MEAN
@@ -57,6 +53,14 @@ static int _cog_gettimeofday(struct timeval *tv, void *tz) {
 #include <sys/time.h>
 #include <unistd.h>
 #endif
+
+#include <stdlib.h>
+#include <string.h>
+#include <stdio.h>
+#include <stdarg.h>
+#include <pthread.h>
+#include <time.h>
+#include <errno.h>
 
 /* Forward declarations for memory-tracking helpers used before their
  * definitions further down in this file. */
