@@ -1,0 +1,15 @@
+prefix=/usr/local
+exec_prefix=${prefix}
+libdir=${prefix}/lib
+includedir=${prefix}/include
+
+Name: cogwxp-os9
+Description: Cognitive Windows XP + Plan9 AGI Operating System
+Version: 1.0.0
+URL: https://github.com/o9nn/CoGWXP-OS9
+
+Requires:
+Requires.private: 
+Libs: -L${libdir} -lcogwxp_os -lunified_bridge -lcogw7os -lcogserver -lpln -latomspace -lcogutil
+Libs.private: -lpthread
+Cflags: -I${includedir}
