@@ -25,8 +25,8 @@ typedef void pthread_condattr_t;
 #define PTHREAD_RWLOCK_INITIALIZER { SRWLOCK_INIT }
 #define PTHREAD_COND_INITIALIZER CONDITION_VARIABLE_INIT
 
+#define COGWXP_MSEC_PER_SEC               1000ULL
 #define COGWXP_NSEC_PER_MSEC              1000000ULL
-#define COGWXP_NSEC_TO_MSEC_ROUNDUP_BIAS   999999ULL
 
 typedef struct {
     void* (*start_routine)(void*);
@@ -254,6 +254,7 @@ static inline int pthread_cond_timedwait(
 ) {
     DWORD timeout_ms;
     struct timespec now;
+    uint64_t delta_ms;
     uint64_t now_ms;
     uint64_t target_ms;
 
@@ -262,16 +263,22 @@ static inline int pthread_cond_timedwait(
     }
 
     timespec_get(&now, TIME_UTC);
-    now_ms = ((uint64_t)now.tv_sec * 1000ULL) + ((uint64_t)now.tv_nsec / COGWXP_NSEC_PER_MSEC);
-    target_ms = ((uint64_t)abstime->tv_sec * 1000ULL) +
-                (((uint64_t)abstime->tv_nsec + COGWXP_NSEC_TO_MSEC_ROUNDUP_BIAS) /
-                 COGWXP_NSEC_PER_MSEC);
+    now_ms = ((uint64_t)now.tv_sec * COGWXP_MSEC_PER_SEC) +
+             ((uint64_t)now.tv_nsec / COGWXP_NSEC_PER_MSEC);
+    target_ms = ((uint64_t)abstime->tv_sec * COGWXP_MSEC_PER_SEC) +
+                ((uint64_t)abstime->tv_nsec / COGWXP_NSEC_PER_MSEC);
+    if (((uint64_t)abstime->tv_nsec % COGWXP_NSEC_PER_MSEC) != 0) {
+        target_ms++;
+    }
 
-    timeout_ms = (target_ms > now_ms)
-        ? (DWORD)((target_ms - now_ms) > (uint64_t)(INFINITE - 1)
+    if (target_ms <= now_ms) {
+        timeout_ms = 0;
+    } else {
+        delta_ms = target_ms - now_ms;
+        timeout_ms = (delta_ms > (uint64_t)(INFINITE - 1))
             ? (INFINITE - 1)
-            : (target_ms - now_ms))
-        : 0;
+            : (DWORD)delta_ms;
+    }
 
     if (SleepConditionVariableSRW(cond, mutex, timeout_ms, 0)) {
         return 0;
