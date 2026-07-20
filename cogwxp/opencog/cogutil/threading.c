@@ -7,7 +7,12 @@
 
 #include <errno.h>
 #include <pthread.h>
+#ifdef _WIN32
+/* pthread.h (pthreads-win32) already pulls in windows.h; SwitchToThread()
+ * is therefore available without an extra include. */
+#else
 #include <sched.h>
+#endif
 #include <stdlib.h>
 #include <time.h>
 
@@ -185,7 +190,11 @@ COGUTIL_API void cog_thread_detach(cog_thread_t thread) {
 }
 
 COGUTIL_API void cog_thread_yield(void) {
+#ifdef _WIN32
+    SwitchToThread();
+#else
     sched_yield();
+#endif
 }
 
 COGUTIL_API uint64_t cog_thread_id(void) {

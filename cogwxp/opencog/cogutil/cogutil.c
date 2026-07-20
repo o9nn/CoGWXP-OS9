@@ -15,10 +15,13 @@
 #include <stdarg.h>
 #include <pthread.h>
 #include <time.h>
-#include <sys/time.h>
 #include <errno.h>
 
 #if defined(_WIN32)
+#ifndef WIN32_LEAN_AND_MEAN
+#define WIN32_LEAN_AND_MEAN
+#endif
+#include <windows.h>
 #include <io.h>
 #ifndef isatty
 #define isatty _isatty
@@ -26,7 +29,32 @@
 #ifndef fileno
 #define fileno _fileno
 #endif
+/* struct timeval / gettimeofday compat for Windows */
+#ifndef _TIMEVAL_DEFINED
+#define _TIMEVAL_DEFINED
+struct timeval { time_t tv_sec; long tv_usec; };
+#endif
+/* Emulates POSIX gettimeofday() using GetSystemTimeAsFileTime().
+ * The tz parameter is accepted for API compatibility but is ignored,
+ * matching the common POSIX practice of passing NULL for it. */
+static int _cog_gettimeofday(struct timeval *tv, void *tz) {
+    FILETIME ft;
+    ULARGE_INTEGER ull;
+    (void)tz; /* timezone param ignored, as per POSIX common usage */
+    GetSystemTimeAsFileTime(&ft);
+    ull.LowPart  = ft.dwLowDateTime;
+    ull.HighPart = ft.dwHighDateTime;
+    /* 116444736000000000: number of 100-nanosecond intervals between
+     * the Windows FILETIME epoch (Jan 1, 1601) and the Unix epoch
+     * (Jan 1, 1970). */
+    ull.QuadPart -= 116444736000000000ULL;
+    tv->tv_sec  = (time_t)(ull.QuadPart / 10000000ULL);
+    tv->tv_usec = (long)((ull.QuadPart % 10000000ULL) / 10);
+    return 0;
+}
+#define gettimeofday _cog_gettimeofday
 #else
+#include <sys/time.h>
 #include <unistd.h>
 #endif
 
@@ -744,10 +772,14 @@ COGUTIL_API uint64_t cog_time_now_us(void) {
 }
 
 COGUTIL_API void cog_time_sleep_ms(uint32_t ms) {
+#ifdef _WIN32
+    Sleep(ms);
+#else
     struct timespec ts;
     ts.tv_sec = ms / 1000;
     ts.tv_nsec = (ms % 1000) * 1000000;
     nanosleep(&ts, NULL);
+#endif
 }
 
 /*===========================================================================
