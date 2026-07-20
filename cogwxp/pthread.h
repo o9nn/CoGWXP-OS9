@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <errno.h>
+#include <time.h>
 
 typedef HANDLE pthread_t;
 typedef SRWLOCK pthread_mutex_t;
@@ -23,6 +24,10 @@ typedef void pthread_condattr_t;
 #define PTHREAD_MUTEX_INITIALIZER SRWLOCK_INIT
 #define PTHREAD_RWLOCK_INITIALIZER { SRWLOCK_INIT }
 #define PTHREAD_COND_INITIALIZER CONDITION_VARIABLE_INIT
+
+#define COGWXP_NSEC_PER_SEC               1000000000ULL
+#define COGWXP_NSEC_PER_MSEC              1000000ULL
+#define COGWXP_MAX_TIMEOUT_MS             ((uint64_t)(INFINITE - 1))
 
 typedef struct {
     void* (*start_routine)(void*);
@@ -124,6 +129,13 @@ static inline int pthread_mutex_lock(pthread_mutex_t* mutex) {
     }
     AcquireSRWLockExclusive(mutex);
     return 0;
+}
+
+static inline int pthread_mutex_trylock(pthread_mutex_t* mutex) {
+    if (!mutex) {
+        return EINVAL;
+    }
+    return TryAcquireSRWLockExclusive(mutex) ? 0 : EBUSY;
 }
 
 static inline int pthread_mutex_unlock(pthread_mutex_t* mutex) {
@@ -229,6 +241,55 @@ static inline int pthread_cond_wait(pthread_cond_t* cond, pthread_mutex_t* mutex
         return EINVAL;
     }
     return SleepConditionVariableSRW(cond, mutex, INFINITE, 0) ? 0 : EINVAL;
+}
+
+/*
+ * Wait until signalled or until the absolute UTC deadline in `abstime`.
+ * Returns 0 on success, ETIMEDOUT on timeout, and EINVAL for invalid input
+ * or other wait failures, matching pthread_cond_timedwait semantics.
+ */
+static inline int pthread_cond_timedwait(
+    pthread_cond_t* cond,
+    pthread_mutex_t* mutex,
+    const struct timespec* abstime
+) {
+    DWORD timeout_ms;
+    struct timespec now;
+    uint64_t delta_ms;
+    uint64_t delta_ns;
+    uint64_t now_ns;
+    uint64_t target_ns;
+
+    if (!cond || !mutex || !abstime) {
+        return EINVAL;
+    }
+
+    if (timespec_get(&now, TIME_UTC) != TIME_UTC) {
+        return EINVAL;
+    }
+    now_ns = ((uint64_t)now.tv_sec * COGWXP_NSEC_PER_SEC) + (uint64_t)now.tv_nsec;
+    target_ns = ((uint64_t)abstime->tv_sec * COGWXP_NSEC_PER_SEC) +
+                (uint64_t)abstime->tv_nsec;
+
+    if (target_ns <= now_ns) {
+        timeout_ms = 0;
+    } else {
+        delta_ns = target_ns - now_ns;
+        delta_ms = delta_ns / COGWXP_NSEC_PER_MSEC;
+        if ((delta_ns % COGWXP_NSEC_PER_MSEC) != 0) {
+            /* Round up so the absolute deadline is not shortened by truncation. */
+            delta_ms++;
+        }
+        timeout_ms = (delta_ms > COGWXP_MAX_TIMEOUT_MS)
+            ? (DWORD)COGWXP_MAX_TIMEOUT_MS
+            : (DWORD)delta_ms;
+    }
+
+    if (SleepConditionVariableSRW(cond, mutex, timeout_ms, 0)) {
+        return 0;
+    }
+
+    return GetLastError() == ERROR_TIMEOUT ? ETIMEDOUT : EINVAL;
 }
 
 static inline int pthread_cond_signal(pthread_cond_t* cond) {
