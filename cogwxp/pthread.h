@@ -264,7 +264,9 @@ static inline int pthread_cond_timedwait(
         return EINVAL;
     }
 
-    timespec_get(&now, TIME_UTC);
+    if (timespec_get(&now, TIME_UTC) != TIME_UTC) {
+        return EINVAL;
+    }
     now_ns = ((uint64_t)now.tv_sec * COGWXP_NSEC_PER_SEC) + (uint64_t)now.tv_nsec;
     target_ns = ((uint64_t)abstime->tv_sec * COGWXP_NSEC_PER_SEC) +
                 (uint64_t)abstime->tv_nsec;
@@ -274,7 +276,8 @@ static inline int pthread_cond_timedwait(
     } else {
         delta_ns = target_ns - now_ns;
         delta_ms = delta_ns / COGWXP_NSEC_PER_MSEC;
-        if ((delta_ns % COGWXP_NSEC_PER_MSEC) != 0) {
+        if ((delta_ns % COGWXP_NSEC_PER_MSEC) != 0 &&
+            delta_ms < COGWXP_MAX_TIMEOUT_MS) {
             delta_ms++;
         }
         timeout_ms = (delta_ms > COGWXP_MAX_TIMEOUT_MS)
