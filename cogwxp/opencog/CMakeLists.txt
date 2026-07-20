@@ -129,6 +129,10 @@ if(ENABLE_DIS_INTEGRATION)
     target_compile_definitions(atomspace PRIVATE ENABLE_DIS_INTEGRATION=1)
 endif()
 
+if(WIN32)
+    target_compile_definitions(atomspace PRIVATE ATOMSPACE_EXPORTS)
+endif()
+
 set_target_properties(atomspace PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
@@ -166,6 +170,10 @@ if(ENABLE_DIS_INTEGRATION)
     target_compile_definitions(pln PRIVATE ENABLE_DIS_INTEGRATION=1)
 endif()
 
+if(WIN32)
+    target_compile_definitions(pln PRIVATE PLN_EXPORTS)
+endif()
+
 set_target_properties(pln PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
@@ -190,6 +198,10 @@ set(COGSERVER_HEADERS
 
 add_library(cogserver ${COGSERVER_SOURCES})
 target_link_libraries(cogserver PUBLIC pln)
+
+if(WIN32)
+    target_compile_definitions(cogserver PRIVATE COGSERVER_EXPORTS)
+endif()
 
 set_target_properties(cogserver PROPERTIES
     VERSION ${PROJECT_VERSION}

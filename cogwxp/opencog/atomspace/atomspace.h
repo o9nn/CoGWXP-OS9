@@ -13,6 +13,16 @@
 
 #include "../cogutil/cogutil.h"
 
+#ifdef COGUTIL_PLATFORM_NT
+    #ifdef ATOMSPACE_EXPORTS
+        #define ATOMSPACE_API __declspec(dllexport)
+    #else
+        #define ATOMSPACE_API __declspec(dllimport)
+    #endif
+#else
+    #define ATOMSPACE_API
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -148,24 +158,24 @@ typedef struct atomspace* atomspace_t;
  * AtomSpace Lifecycle
  *===========================================================================*/
 
-COGUTIL_API atomspace_t atomspace_create(void);
-COGUTIL_API void        atomspace_destroy(atomspace_t as);
-COGUTIL_API atomspace_t atomspace_create_child(atomspace_t parent);
-COGUTIL_API atomspace_t atomspace_get_parent(atomspace_t as);
-COGUTIL_API void        atomspace_clear(atomspace_t as);
+ATOMSPACE_API atomspace_t atomspace_create(void);
+ATOMSPACE_API void        atomspace_destroy(atomspace_t as);
+ATOMSPACE_API atomspace_t atomspace_create_child(atomspace_t parent);
+ATOMSPACE_API atomspace_t atomspace_get_parent(atomspace_t as);
+ATOMSPACE_API void        atomspace_clear(atomspace_t as);
 
 /*===========================================================================
  * Atom Creation and Retrieval
  *===========================================================================*/
 
 /* Node operations */
-COGUTIL_API atom_handle_t atomspace_add_node(
+ATOMSPACE_API atom_handle_t atomspace_add_node(
     atomspace_t as,
     atom_type_t type,
     const char* name
 );
 
-COGUTIL_API atom_handle_t atomspace_add_node_tv(
+ATOMSPACE_API atom_handle_t atomspace_add_node_tv(
     atomspace_t as,
     atom_type_t type,
     const char* name,
@@ -173,14 +183,14 @@ COGUTIL_API atom_handle_t atomspace_add_node_tv(
 );
 
 /* Link operations */
-COGUTIL_API atom_handle_t atomspace_add_link(
+ATOMSPACE_API atom_handle_t atomspace_add_link(
     atomspace_t as,
     atom_type_t type,
     const atom_handle_t* outgoing,
     size_t outgoing_count
 );
 
-COGUTIL_API atom_handle_t atomspace_add_link_tv(
+ATOMSPACE_API atom_handle_t atomspace_add_link_tv(
     atomspace_t as,
     atom_type_t type,
     const atom_handle_t* outgoing,
@@ -189,58 +199,58 @@ COGUTIL_API atom_handle_t atomspace_add_link_tv(
 );
 
 /* Retrieval */
-COGUTIL_API atom_handle_t atomspace_get_node(
+ATOMSPACE_API atom_handle_t atomspace_get_node(
     atomspace_t as,
     atom_type_t type,
     const char* name
 );
 
-COGUTIL_API atom_handle_t atomspace_get_link(
+ATOMSPACE_API atom_handle_t atomspace_get_link(
     atomspace_t as,
     atom_type_t type,
     const atom_handle_t* outgoing,
     size_t outgoing_count
 );
 
-COGUTIL_API const atom_t* atomspace_get_atom(atomspace_t as, atom_handle_t handle);
+ATOMSPACE_API const atom_t* atomspace_get_atom(atomspace_t as, atom_handle_t handle);
 
 /* Removal */
-COGUTIL_API bool atomspace_remove_atom(atomspace_t as, atom_handle_t handle);
-COGUTIL_API bool atomspace_remove_atom_recursive(atomspace_t as, atom_handle_t handle);
+ATOMSPACE_API bool atomspace_remove_atom(atomspace_t as, atom_handle_t handle);
+ATOMSPACE_API bool atomspace_remove_atom_recursive(atomspace_t as, atom_handle_t handle);
 
 /*===========================================================================
  * Atom Properties
  *===========================================================================*/
 
 /* Truth value operations */
-COGUTIL_API truth_value_t atomspace_get_tv(atomspace_t as, atom_handle_t handle);
-COGUTIL_API void          atomspace_set_tv(atomspace_t as, atom_handle_t handle, truth_value_t tv);
-COGUTIL_API void          atomspace_merge_tv(atomspace_t as, atom_handle_t handle, truth_value_t tv);
+ATOMSPACE_API truth_value_t atomspace_get_tv(atomspace_t as, atom_handle_t handle);
+ATOMSPACE_API void          atomspace_set_tv(atomspace_t as, atom_handle_t handle, truth_value_t tv);
+ATOMSPACE_API void          atomspace_merge_tv(atomspace_t as, atom_handle_t handle, truth_value_t tv);
 
 /* Truth value helpers */
-COGUTIL_API truth_value_t tv_simple(double strength, double confidence);
-COGUTIL_API truth_value_t tv_count(double strength, double confidence, uint64_t count);
-COGUTIL_API truth_value_t tv_merge(const truth_value_t* a, const truth_value_t* b);
+ATOMSPACE_API truth_value_t tv_simple(double strength, double confidence);
+ATOMSPACE_API truth_value_t tv_count(double strength, double confidence, uint64_t count);
+ATOMSPACE_API truth_value_t tv_merge(const truth_value_t* a, const truth_value_t* b);
 
 /* Attention value operations */
-COGUTIL_API attention_value_t atomspace_get_av(atomspace_t as, atom_handle_t handle);
-COGUTIL_API void              atomspace_set_av(atomspace_t as, atom_handle_t handle, attention_value_t av);
-COGUTIL_API void              atomspace_stimulate(atomspace_t as, atom_handle_t handle, int16_t stimulus);
+ATOMSPACE_API attention_value_t atomspace_get_av(atomspace_t as, atom_handle_t handle);
+ATOMSPACE_API void              atomspace_set_av(atomspace_t as, atom_handle_t handle, attention_value_t av);
+ATOMSPACE_API void              atomspace_stimulate(atomspace_t as, atom_handle_t handle, int16_t stimulus);
 
 /* Type and name */
-COGUTIL_API atom_type_t   atomspace_get_type(atomspace_t as, atom_handle_t handle);
-COGUTIL_API const char*   atomspace_get_name(atomspace_t as, atom_handle_t handle);
-COGUTIL_API bool          atomspace_is_node(atomspace_t as, atom_handle_t handle);
-COGUTIL_API bool          atomspace_is_link(atomspace_t as, atom_handle_t handle);
+ATOMSPACE_API atom_type_t   atomspace_get_type(atomspace_t as, atom_handle_t handle);
+ATOMSPACE_API const char*   atomspace_get_name(atomspace_t as, atom_handle_t handle);
+ATOMSPACE_API bool          atomspace_is_node(atomspace_t as, atom_handle_t handle);
+ATOMSPACE_API bool          atomspace_is_link(atomspace_t as, atom_handle_t handle);
 
 /* Outgoing set (for links) */
-COGUTIL_API size_t              atomspace_get_arity(atomspace_t as, atom_handle_t handle);
-COGUTIL_API const atom_handle_t* atomspace_get_outgoing(atomspace_t as, atom_handle_t handle);
-COGUTIL_API atom_handle_t       atomspace_get_outgoing_at(atomspace_t as, atom_handle_t handle, size_t index);
+ATOMSPACE_API size_t              atomspace_get_arity(atomspace_t as, atom_handle_t handle);
+ATOMSPACE_API const atom_handle_t* atomspace_get_outgoing(atomspace_t as, atom_handle_t handle);
+ATOMSPACE_API atom_handle_t       atomspace_get_outgoing_at(atomspace_t as, atom_handle_t handle, size_t index);
 
 /* Incoming set */
-COGUTIL_API size_t              atomspace_get_incoming_size(atomspace_t as, atom_handle_t handle);
-COGUTIL_API atom_handle_t*      atomspace_get_incoming(atomspace_t as, atom_handle_t handle, size_t* count);
+ATOMSPACE_API size_t              atomspace_get_incoming_size(atomspace_t as, atom_handle_t handle);
+ATOMSPACE_API atom_handle_t*      atomspace_get_incoming(atomspace_t as, atom_handle_t handle, size_t* count);
 
 /*===========================================================================
  * Query and Pattern Matching
@@ -249,19 +259,19 @@ COGUTIL_API atom_handle_t*      atomspace_get_incoming(atomspace_t as, atom_hand
 typedef struct atom_query* atom_query_t;
 
 /* Query builder */
-COGUTIL_API atom_query_t atomspace_query_create(atomspace_t as);
-COGUTIL_API void         atomspace_query_destroy(atom_query_t query);
-COGUTIL_API void         atomspace_query_type(atom_query_t query, atom_type_t type);
-COGUTIL_API void         atomspace_query_name(atom_query_t query, const char* pattern);
-COGUTIL_API void         atomspace_query_tv_min(atom_query_t query, double min_strength, double min_confidence);
-COGUTIL_API void         atomspace_query_av_min(atom_query_t query, int16_t min_sti);
+ATOMSPACE_API atom_query_t atomspace_query_create(atomspace_t as);
+ATOMSPACE_API void         atomspace_query_destroy(atom_query_t query);
+ATOMSPACE_API void         atomspace_query_type(atom_query_t query, atom_type_t type);
+ATOMSPACE_API void         atomspace_query_name(atom_query_t query, const char* pattern);
+ATOMSPACE_API void         atomspace_query_tv_min(atom_query_t query, double min_strength, double min_confidence);
+ATOMSPACE_API void         atomspace_query_av_min(atom_query_t query, int16_t min_sti);
 
 /* Query execution */
-COGUTIL_API atom_handle_t* atomspace_query_execute(atom_query_t query, size_t* count);
-COGUTIL_API void           atomspace_query_results_free(atom_handle_t* results);
+ATOMSPACE_API atom_handle_t* atomspace_query_execute(atom_query_t query, size_t* count);
+ATOMSPACE_API void           atomspace_query_results_free(atom_handle_t* results);
 
 /* Pattern matching */
-COGUTIL_API atom_handle_t* atomspace_pattern_match(
+ATOMSPACE_API atom_handle_t* atomspace_pattern_match(
     atomspace_t as,
     atom_handle_t pattern,
     size_t* count
@@ -273,11 +283,11 @@ COGUTIL_API atom_handle_t* atomspace_pattern_match(
 
 typedef struct attention_bank* attention_bank_t;
 
-COGUTIL_API attention_bank_t atomspace_get_attention_bank(atomspace_t as);
-COGUTIL_API void             attention_bank_update_sti(attention_bank_t bank, atom_handle_t handle, int16_t delta);
-COGUTIL_API void             attention_bank_update_lti(attention_bank_t bank, atom_handle_t handle, int16_t delta);
-COGUTIL_API atom_handle_t*   attention_bank_get_top_sti(attention_bank_t bank, size_t count, size_t* actual_count);
-COGUTIL_API int16_t          attention_bank_get_attentional_focus_boundary(attention_bank_t bank);
+ATOMSPACE_API attention_bank_t atomspace_get_attention_bank(atomspace_t as);
+ATOMSPACE_API void             attention_bank_update_sti(attention_bank_t bank, atom_handle_t handle, int16_t delta);
+ATOMSPACE_API void             attention_bank_update_lti(attention_bank_t bank, atom_handle_t handle, int16_t delta);
+ATOMSPACE_API atom_handle_t*   attention_bank_get_top_sti(attention_bank_t bank, size_t count, size_t* actual_count);
+ATOMSPACE_API int16_t          attention_bank_get_attentional_focus_boundary(attention_bank_t bank);
 
 /*===========================================================================
  * Activation Spreading
@@ -290,7 +300,7 @@ typedef struct spreading_config {
     bool include_hebbian;
 } spreading_config_t;
 
-COGUTIL_API void atomspace_spread_activation(
+ATOMSPACE_API void atomspace_spread_activation(
     atomspace_t as,
     atom_handle_t source,
     spreading_config_t* config
@@ -310,13 +320,13 @@ typedef struct atomspace_stats {
     int16_t avg_sti;
 } atomspace_stats_t;
 
-COGUTIL_API void atomspace_get_stats(atomspace_t as, atomspace_stats_t* stats);
-COGUTIL_API size_t atomspace_size(atomspace_t as);
+ATOMSPACE_API void atomspace_get_stats(atomspace_t as, atomspace_stats_t* stats);
+ATOMSPACE_API size_t atomspace_size(atomspace_t as);
 
 /* Retrieve all atoms of a given type (optionally including subtypes).
  * On success *atoms is a malloc'd array the caller frees with
  * atomspace_query_results_free(). */
-COGUTIL_API cog_result_t atomspace_get_atoms_by_type(
+ATOMSPACE_API cog_result_t atomspace_get_atoms_by_type(
     atomspace_t as,
     atom_type_t type,
     bool include_subtypes,
@@ -328,36 +338,36 @@ COGUTIL_API cog_result_t atomspace_get_atoms_by_type(
  * Serialization
  *===========================================================================*/
 
-COGUTIL_API cog_result_t atomspace_save(atomspace_t as, const char* path);
-COGUTIL_API cog_result_t atomspace_load(atomspace_t as, const char* path);
-COGUTIL_API char*        atomspace_to_scheme(atomspace_t as, atom_handle_t handle);
-COGUTIL_API atom_handle_t atomspace_from_scheme(atomspace_t as, const char* scheme_expr);
+ATOMSPACE_API cog_result_t atomspace_save(atomspace_t as, const char* path);
+ATOMSPACE_API cog_result_t atomspace_load(atomspace_t as, const char* path);
+ATOMSPACE_API char*        atomspace_to_scheme(atomspace_t as, atom_handle_t handle);
+ATOMSPACE_API atom_handle_t atomspace_from_scheme(atomspace_t as, const char* scheme_expr);
 
 /*===========================================================================
  * 9P/Styx Integration
  *===========================================================================*/
 
 /* Export AtomSpace as 9P file system */
-COGUTIL_API cog_result_t atomspace_export_9p(atomspace_t as, const char* mount_point);
-COGUTIL_API cog_result_t atomspace_unexport_9p(atomspace_t as);
+ATOMSPACE_API cog_result_t atomspace_export_9p(atomspace_t as, const char* mount_point);
+ATOMSPACE_API cog_result_t atomspace_unexport_9p(atomspace_t as);
 
 /* Access atoms via 9P paths */
-COGUTIL_API atom_handle_t atomspace_get_by_path(atomspace_t as, const char* path);
-COGUTIL_API char*         atomspace_get_path(atomspace_t as, atom_handle_t handle);
+ATOMSPACE_API atom_handle_t atomspace_get_by_path(atomspace_t as, const char* path);
+ATOMSPACE_API char*         atomspace_get_path(atomspace_t as, atom_handle_t handle);
 
 /*===========================================================================
  * Dis VM Integration
  *===========================================================================*/
 
 /* Register Dis module as atom */
-COGUTIL_API atom_handle_t atomspace_register_dis_module(
+ATOMSPACE_API atom_handle_t atomspace_register_dis_module(
     atomspace_t as,
     const char* module_name,
     void* dis_module
 );
 
 /* Execute Limbo procedure on atom */
-COGUTIL_API cog_result_t atomspace_execute_limbo(
+ATOMSPACE_API cog_result_t atomspace_execute_limbo(
     atomspace_t as,
     atom_handle_t proc_node,
     atom_handle_t* args,
@@ -370,7 +380,7 @@ COGUTIL_API cog_result_t atomspace_execute_limbo(
  *===========================================================================*/
 
 /* Register kernel object as atom */
-COGUTIL_API atom_handle_t atomspace_register_kernel_object(
+ATOMSPACE_API atom_handle_t atomspace_register_kernel_object(
     atomspace_t as,
     atom_type_t type,
     const char* name,
@@ -378,7 +388,7 @@ COGUTIL_API atom_handle_t atomspace_register_kernel_object(
 );
 
 /* Get kernel handle from atom */
-COGUTIL_API void* atomspace_get_kernel_handle(atomspace_t as, atom_handle_t handle);
+ATOMSPACE_API void* atomspace_get_kernel_handle(atomspace_t as, atom_handle_t handle);
 
 #ifdef __cplusplus
 }

@@ -15,6 +15,16 @@
 #include "../atomspace/atomspace.h"
 #include "../pln/pln.h"
 
+#ifdef COGUTIL_PLATFORM_NT
+    #ifdef COGSERVER_EXPORTS
+        #define COGSERVER_API __declspec(dllexport)
+    #else
+        #define COGSERVER_API __declspec(dllimport)
+    #endif
+#else
+    #define COGSERVER_API
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -183,23 +193,23 @@ typedef struct cogserver_config {
     cog_log_level_t log_level;
 } cogserver_config_t;
 
-COGUTIL_API cogserver_config_t cogserver_config_default(void);
+COGSERVER_API cogserver_config_t cogserver_config_default(void);
 
 /*===========================================================================
  * CogServer Lifecycle
  *===========================================================================*/
 
-COGUTIL_API cogserver_t cogserver_create(cogserver_config_t* config);
-COGUTIL_API void        cogserver_destroy(cogserver_t server);
-COGUTIL_API cog_result_t cogserver_start(cogserver_t server);
-COGUTIL_API void        cogserver_stop(cogserver_t server);
-COGUTIL_API bool        cogserver_is_running(cogserver_t server);
+COGSERVER_API cogserver_t cogserver_create(cogserver_config_t* config);
+COGSERVER_API void        cogserver_destroy(cogserver_t server);
+COGSERVER_API cog_result_t cogserver_start(cogserver_t server);
+COGSERVER_API void        cogserver_stop(cogserver_t server);
+COGSERVER_API bool        cogserver_is_running(cogserver_t server);
 
 /*===========================================================================
  * Agent Management
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cogserver_create_agent(
+COGSERVER_API cog_result_t cogserver_create_agent(
     cogserver_t server,
     const char* name,
     agent_type_t type,
@@ -208,42 +218,42 @@ COGUTIL_API cog_result_t cogserver_create_agent(
     uint64_t* agent_id
 );
 
-COGUTIL_API cog_result_t cogserver_destroy_agent(
+COGSERVER_API cog_result_t cogserver_destroy_agent(
     cogserver_t server,
     uint64_t agent_id
 );
 
-COGUTIL_API cog_result_t cogserver_start_agent(
+COGSERVER_API cog_result_t cogserver_start_agent(
     cogserver_t server,
     uint64_t agent_id
 );
 
-COGUTIL_API cog_result_t cogserver_stop_agent(
+COGSERVER_API cog_result_t cogserver_stop_agent(
     cogserver_t server,
     uint64_t agent_id
 );
 
-COGUTIL_API cog_result_t cogserver_suspend_agent(
+COGSERVER_API cog_result_t cogserver_suspend_agent(
     cogserver_t server,
     uint64_t agent_id
 );
 
-COGUTIL_API cog_result_t cogserver_resume_agent(
+COGSERVER_API cog_result_t cogserver_resume_agent(
     cogserver_t server,
     uint64_t agent_id
 );
 
-COGUTIL_API cog_agent_t* cogserver_get_agent(
+COGSERVER_API cog_agent_t* cogserver_get_agent(
     cogserver_t server,
     uint64_t agent_id
 );
 
-COGUTIL_API cog_agent_t** cogserver_get_all_agents(
+COGSERVER_API cog_agent_t** cogserver_get_all_agents(
     cogserver_t server,
     size_t* count
 );
 
-COGUTIL_API cog_agent_t** cogserver_find_agents_by_capability(
+COGSERVER_API cog_agent_t** cogserver_find_agents_by_capability(
     cogserver_t server,
     const char* capability,
     size_t* count
@@ -253,7 +263,7 @@ COGUTIL_API cog_agent_t** cogserver_find_agents_by_capability(
  * Task Management
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cogserver_create_task(
+COGSERVER_API cog_result_t cogserver_create_task(
     cogserver_t server,
     const char* name,
     task_type_t type,
@@ -262,28 +272,28 @@ COGUTIL_API cog_result_t cogserver_create_task(
     uint64_t* task_id
 );
 
-COGUTIL_API cog_result_t cogserver_submit_task(
+COGSERVER_API cog_result_t cogserver_submit_task(
     cogserver_t server,
     uint64_t task_id
 );
 
-COGUTIL_API cog_result_t cogserver_cancel_task(
+COGSERVER_API cog_result_t cogserver_cancel_task(
     cogserver_t server,
     uint64_t task_id
 );
 
-COGUTIL_API cog_result_t cogserver_wait_task(
+COGSERVER_API cog_result_t cogserver_wait_task(
     cogserver_t server,
     uint64_t task_id,
     uint32_t timeout_ms
 );
 
-COGUTIL_API cog_task_t* cogserver_get_task(
+COGSERVER_API cog_task_t* cogserver_get_task(
     cogserver_t server,
     uint64_t task_id
 );
 
-COGUTIL_API cog_result_t cogserver_set_task_callback(
+COGSERVER_API cog_result_t cogserver_set_task_callback(
     cogserver_t server,
     uint64_t task_id,
     void (*on_complete)(cog_task_t*, void*),
@@ -291,7 +301,7 @@ COGUTIL_API cog_result_t cogserver_set_task_callback(
     void* user_data
 );
 
-COGUTIL_API cog_result_t cogserver_add_task_dependency(
+COGSERVER_API cog_result_t cogserver_add_task_dependency(
     cogserver_t server,
     uint64_t task_id,
     uint64_t dependency_task_id
@@ -302,7 +312,7 @@ COGUTIL_API cog_result_t cogserver_add_task_dependency(
  *===========================================================================*/
 
 /* Submit multiple tasks and wait for all to complete */
-COGUTIL_API cog_result_t cogserver_orchestrate_tasks(
+COGSERVER_API cog_result_t cogserver_orchestrate_tasks(
     cogserver_t server,
     uint64_t* task_ids,
     size_t task_count,
@@ -310,14 +320,14 @@ COGUTIL_API cog_result_t cogserver_orchestrate_tasks(
 );
 
 /* Dispatch task to best available agent */
-COGUTIL_API cog_result_t cogserver_dispatch_task(
+COGSERVER_API cog_result_t cogserver_dispatch_task(
     cogserver_t server,
     uint64_t task_id,
     uint64_t* assigned_agent_id
 );
 
 /* Dispatch task to specific agent */
-COGUTIL_API cog_result_t cogserver_dispatch_task_to_agent(
+COGSERVER_API cog_result_t cogserver_dispatch_task_to_agent(
     cogserver_t server,
     uint64_t task_id,
     uint64_t agent_id
@@ -335,7 +345,7 @@ typedef struct agent_message {
     uint64_t timestamp;
 } agent_message_t;
 
-COGUTIL_API cog_result_t cogserver_send_message(
+COGSERVER_API cog_result_t cogserver_send_message(
     cogserver_t server,
     uint64_t sender_id,
     uint64_t receiver_id,
@@ -343,14 +353,14 @@ COGUTIL_API cog_result_t cogserver_send_message(
     atom_handle_t content
 );
 
-COGUTIL_API cog_result_t cogserver_broadcast_message(
+COGSERVER_API cog_result_t cogserver_broadcast_message(
     cogserver_t server,
     uint64_t sender_id,
     const char* type,
     atom_handle_t content
 );
 
-COGUTIL_API cog_result_t cogserver_receive_message(
+COGSERVER_API cog_result_t cogserver_receive_message(
     cogserver_t server,
     uint64_t agent_id,
     agent_message_t* message,
@@ -361,15 +371,15 @@ COGUTIL_API cog_result_t cogserver_receive_message(
  * Shared AtomSpace
  *===========================================================================*/
 
-COGUTIL_API atomspace_t cogserver_get_global_atomspace(cogserver_t server);
+COGSERVER_API atomspace_t cogserver_get_global_atomspace(cogserver_t server);
 
-COGUTIL_API cog_result_t cogserver_share_atom(
+COGSERVER_API cog_result_t cogserver_share_atom(
     cogserver_t server,
     uint64_t agent_id,
     atom_handle_t atom
 );
 
-COGUTIL_API cog_result_t cogserver_sync_agent_atomspace(
+COGSERVER_API cog_result_t cogserver_sync_agent_atomspace(
     cogserver_t server,
     uint64_t agent_id
 );
@@ -378,19 +388,19 @@ COGUTIL_API cog_result_t cogserver_sync_agent_atomspace(
  * Attention Allocation
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cogserver_stimulate_agent(
+COGSERVER_API cog_result_t cogserver_stimulate_agent(
     cogserver_t server,
     uint64_t agent_id,
     int16_t stimulus
 );
 
-COGUTIL_API cog_result_t cogserver_update_agent_attention(
+COGSERVER_API cog_result_t cogserver_update_agent_attention(
     cogserver_t server,
     uint64_t agent_id,
     attention_value_t av
 );
 
-COGUTIL_API cog_agent_t** cogserver_get_top_attention_agents(
+COGSERVER_API cog_agent_t** cogserver_get_top_attention_agents(
     cogserver_t server,
     size_t count,
     size_t* actual_count
@@ -401,27 +411,27 @@ COGUTIL_API cog_agent_t** cogserver_get_top_attention_agents(
  *===========================================================================*/
 
 /* Connect to remote CogServer */
-COGUTIL_API cog_result_t cogserver_connect_remote(
+COGSERVER_API cog_result_t cogserver_connect_remote(
     cogserver_t server,
     const char* address,
     uint16_t port,
     uint64_t* connection_id
 );
 
-COGUTIL_API cog_result_t cogserver_disconnect_remote(
+COGSERVER_API cog_result_t cogserver_disconnect_remote(
     cogserver_t server,
     uint64_t connection_id
 );
 
 /* Distributed task execution */
-COGUTIL_API cog_result_t cogserver_dispatch_remote_task(
+COGSERVER_API cog_result_t cogserver_dispatch_remote_task(
     cogserver_t server,
     uint64_t connection_id,
     uint64_t task_id
 );
 
 /* Distributed inference */
-COGUTIL_API cog_result_t cogserver_distributed_inference(
+COGSERVER_API cog_result_t cogserver_distributed_inference(
     cogserver_t server,
     atom_handle_t source,
     uint64_t* connection_ids,
@@ -459,13 +469,13 @@ COGUTIL_API cog_result_t cogserver_distributed_inference(
  * /atomspace/                (global atomspace)
  */
 
-COGUTIL_API cog_result_t cogserver_export_9p(
+COGSERVER_API cog_result_t cogserver_export_9p(
     cogserver_t server,
     const char* address,
     uint16_t port
 );
 
-COGUTIL_API cog_result_t cogserver_unexport_9p(cogserver_t server);
+COGSERVER_API cog_result_t cogserver_unexport_9p(cogserver_t server);
 
 /*===========================================================================
  * Statistics
@@ -500,8 +510,8 @@ typedef struct cogserver_stats {
     uint64_t bytes_received;
 } cogserver_stats_t;
 
-COGUTIL_API void cogserver_get_stats(cogserver_t server, cogserver_stats_t* stats);
-COGUTIL_API void cogserver_reset_stats(cogserver_t server);
+COGSERVER_API void cogserver_get_stats(cogserver_t server, cogserver_stats_t* stats);
+COGSERVER_API void cogserver_reset_stats(cogserver_t server);
 
 /*===========================================================================
  * Event Callbacks
@@ -530,7 +540,7 @@ typedef struct cogserver_event {
 
 typedef void (*cogserver_event_handler_t)(cogserver_event_t* event, void* user_data);
 
-COGUTIL_API cog_result_t cogserver_set_event_handler(
+COGSERVER_API cog_result_t cogserver_set_event_handler(
     cogserver_t server,
     cogserver_event_handler_t handler,
     void* user_data

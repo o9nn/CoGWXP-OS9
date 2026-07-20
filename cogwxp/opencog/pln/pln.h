@@ -14,6 +14,16 @@
 #include "../cogutil/cogutil.h"
 #include "../atomspace/atomspace.h"
 
+#ifdef COGUTIL_PLATFORM_NT
+    #ifdef PLN_EXPORTS
+        #define PLN_API __declspec(dllexport)
+    #else
+        #define PLN_API __declspec(dllimport)
+    #endif
+#else
+    #define PLN_API
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -84,7 +94,7 @@ typedef struct pln_config {
     const char* distributed_endpoint;
 } pln_config_t;
 
-COGUTIL_API pln_config_t pln_config_default(void);
+PLN_API pln_config_t pln_config_default(void);
 
 /*===========================================================================
  * PLN Engine
@@ -92,10 +102,10 @@ COGUTIL_API pln_config_t pln_config_default(void);
 
 typedef struct pln_engine* pln_engine_t;
 
-COGUTIL_API pln_engine_t pln_engine_create(atomspace_t as, pln_config_t* config);
-COGUTIL_API void         pln_engine_destroy(pln_engine_t engine);
-COGUTIL_API void         pln_engine_set_config(pln_engine_t engine, pln_config_t* config);
-COGUTIL_API pln_config_t pln_engine_get_config(pln_engine_t engine);
+PLN_API pln_engine_t pln_engine_create(atomspace_t as, pln_config_t* config);
+PLN_API void         pln_engine_destroy(pln_engine_t engine);
+PLN_API void         pln_engine_set_config(pln_engine_t engine, pln_config_t* config);
+PLN_API pln_config_t pln_engine_get_config(pln_engine_t engine);
 
 /*===========================================================================
  * Forward Chaining
@@ -108,20 +118,20 @@ typedef struct forward_chain_result {
     double total_time_ms;
 } forward_chain_result_t;
 
-COGUTIL_API forward_chain_result_t* pln_forward_chain(
+PLN_API forward_chain_result_t* pln_forward_chain(
     pln_engine_t engine,
     atom_handle_t source,
     size_t max_steps
 );
 
-COGUTIL_API forward_chain_result_t* pln_forward_chain_multi(
+PLN_API forward_chain_result_t* pln_forward_chain_multi(
     pln_engine_t engine,
     atom_handle_t* sources,
     size_t source_count,
     size_t max_steps
 );
 
-COGUTIL_API void pln_forward_chain_result_free(forward_chain_result_t* result);
+PLN_API void pln_forward_chain_result_free(forward_chain_result_t* result);
 
 /*===========================================================================
  * Backward Chaining
@@ -137,13 +147,13 @@ typedef struct backward_chain_result {
     double total_time_ms;
 } backward_chain_result_t;
 
-COGUTIL_API backward_chain_result_t* pln_backward_chain(
+PLN_API backward_chain_result_t* pln_backward_chain(
     pln_engine_t engine,
     atom_handle_t goal,
     size_t max_depth
 );
 
-COGUTIL_API backward_chain_result_t* pln_backward_chain_with_premises(
+PLN_API backward_chain_result_t* pln_backward_chain_with_premises(
     pln_engine_t engine,
     atom_handle_t goal,
     atom_handle_t* premises,
@@ -151,7 +161,7 @@ COGUTIL_API backward_chain_result_t* pln_backward_chain_with_premises(
     size_t max_depth
 );
 
-COGUTIL_API void pln_backward_chain_result_free(backward_chain_result_t* result);
+PLN_API void pln_backward_chain_result_free(backward_chain_result_t* result);
 
 /*===========================================================================
  * Rule Application
@@ -166,27 +176,27 @@ typedef struct rule_application {
     double confidence_gain;
 } rule_application_t;
 
-COGUTIL_API rule_application_t* pln_apply_rule(
+PLN_API rule_application_t* pln_apply_rule(
     pln_engine_t engine,
     pln_rule_type_t rule,
     atom_handle_t* premises,
     size_t premise_count
 );
 
-COGUTIL_API atom_handle_t* pln_get_applicable_rules(
+PLN_API atom_handle_t* pln_get_applicable_rules(
     pln_engine_t engine,
     atom_handle_t atom,
     size_t* count
 );
 
-COGUTIL_API void pln_rule_application_free(rule_application_t* app);
+PLN_API void pln_rule_application_free(rule_application_t* app);
 
 /*===========================================================================
  * Truth Value Formulas
  *===========================================================================*/
 
 /* Deduction formula: P(B|A) * P(A) / P(B) */
-COGUTIL_API truth_value_t pln_tv_deduction(
+PLN_API truth_value_t pln_tv_deduction(
     truth_value_t tv_ab,    /* P(B|A) - premise 1 */
     truth_value_t tv_bc,    /* P(C|B) - premise 2 */
     truth_value_t tv_a,     /* P(A) - prior */
@@ -195,7 +205,7 @@ COGUTIL_API truth_value_t pln_tv_deduction(
 );
 
 /* Induction formula */
-COGUTIL_API truth_value_t pln_tv_induction(
+PLN_API truth_value_t pln_tv_induction(
     truth_value_t tv_ab,
     truth_value_t tv_ac,
     truth_value_t tv_a,
@@ -204,7 +214,7 @@ COGUTIL_API truth_value_t pln_tv_induction(
 );
 
 /* Abduction formula */
-COGUTIL_API truth_value_t pln_tv_abduction(
+PLN_API truth_value_t pln_tv_abduction(
     truth_value_t tv_ab,
     truth_value_t tv_cb,
     truth_value_t tv_a,
@@ -213,12 +223,12 @@ COGUTIL_API truth_value_t pln_tv_abduction(
 );
 
 /* Boolean formulas */
-COGUTIL_API truth_value_t pln_tv_and(truth_value_t tv1, truth_value_t tv2);
-COGUTIL_API truth_value_t pln_tv_or(truth_value_t tv1, truth_value_t tv2);
-COGUTIL_API truth_value_t pln_tv_not(truth_value_t tv);
+PLN_API truth_value_t pln_tv_and(truth_value_t tv1, truth_value_t tv2);
+PLN_API truth_value_t pln_tv_or(truth_value_t tv1, truth_value_t tv2);
+PLN_API truth_value_t pln_tv_not(truth_value_t tv);
 
 /* Revision formula - combining evidence */
-COGUTIL_API truth_value_t pln_tv_revision(truth_value_t tv1, truth_value_t tv2);
+PLN_API truth_value_t pln_tv_revision(truth_value_t tv1, truth_value_t tv2);
 
 /*===========================================================================
  * Inference Control
@@ -232,7 +242,7 @@ typedef enum {
     PLN_CONTROL_HYBRID
 } pln_control_strategy_t;
 
-COGUTIL_API void pln_set_control_strategy(pln_engine_t engine, pln_control_strategy_t strategy);
+PLN_API void pln_set_control_strategy(pln_engine_t engine, pln_control_strategy_t strategy);
 
 typedef double (*pln_rule_selector_t)(
     pln_engine_t engine,
@@ -242,7 +252,7 @@ typedef double (*pln_rule_selector_t)(
     void* user_data
 );
 
-COGUTIL_API void pln_set_rule_selector(
+PLN_API void pln_set_rule_selector(
     pln_engine_t engine,
     pln_rule_selector_t selector,
     void* user_data
@@ -262,20 +272,20 @@ typedef struct inference_step {
     uint64_t timestamp;
 } inference_step_t;
 
-COGUTIL_API inference_step_t* pln_get_inference_history(
+PLN_API inference_step_t* pln_get_inference_history(
     pln_engine_t engine,
     size_t* count
 );
 
-COGUTIL_API void pln_clear_inference_history(pln_engine_t engine);
-COGUTIL_API void pln_inference_history_free(inference_step_t* history, size_t count);
+PLN_API void pln_clear_inference_history(pln_engine_t engine);
+PLN_API void pln_inference_history_free(inference_step_t* history, size_t count);
 
 /*===========================================================================
  * Distributed PLN (9P/Dis Integration)
  *===========================================================================*/
 
 /* Distributed inference across 9P network */
-COGUTIL_API cog_result_t pln_distributed_forward_chain(
+PLN_API cog_result_t pln_distributed_forward_chain(
     pln_engine_t engine,
     atom_handle_t source,
     const char** endpoints,
@@ -285,7 +295,7 @@ COGUTIL_API cog_result_t pln_distributed_forward_chain(
 );
 
 /* Execute PLN rule in Dis VM */
-COGUTIL_API cog_result_t pln_execute_in_dis(
+PLN_API cog_result_t pln_execute_in_dis(
     pln_engine_t engine,
     pln_rule_type_t rule,
     atom_handle_t* premises,
@@ -295,7 +305,7 @@ COGUTIL_API cog_result_t pln_execute_in_dis(
 );
 
 /* Register custom rule implemented in Limbo */
-COGUTIL_API cog_result_t pln_register_limbo_rule(
+PLN_API cog_result_t pln_register_limbo_rule(
     pln_engine_t engine,
     const char* rule_name,
     const char* limbo_module,
@@ -316,8 +326,8 @@ typedef struct pln_stats {
     size_t rules_applied[PLN_RULE_MAX];
 } pln_stats_t;
 
-COGUTIL_API void pln_get_stats(pln_engine_t engine, pln_stats_t* stats);
-COGUTIL_API void pln_reset_stats(pln_engine_t engine);
+PLN_API void pln_get_stats(pln_engine_t engine, pln_stats_t* stats);
+PLN_API void pln_reset_stats(pln_engine_t engine);
 
 #ifdef __cplusplus
 }

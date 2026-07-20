@@ -141,7 +141,15 @@ COGUTIL_API bool cog_cond_timedwait(cog_cond_t cond, cog_mutex_t mutex, uint32_t
     if (!cond || !mutex) return false;
 
     struct timespec ts;
+#if defined(CLOCK_REALTIME)
     clock_gettime(CLOCK_REALTIME, &ts);
+#elif defined(_WIN32)
+    /* timespec_get (C11) is available in MSVC 2015+ (Visual Studio 14.0) */
+    timespec_get(&ts, TIME_UTC);
+#else
+    ts.tv_sec = time(NULL);
+    ts.tv_nsec = 0;
+#endif
     ts.tv_sec += timeout_ms / 1000;
     ts.tv_nsec += (long)(timeout_ms % 1000) * 1000000L;
     if (ts.tv_nsec >= 1000000000L) {
