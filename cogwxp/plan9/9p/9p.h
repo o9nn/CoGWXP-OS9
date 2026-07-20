@@ -16,9 +16,10 @@
 
 /* ssize_t is a POSIX type not provided by MSVC */
 #ifdef COGUTIL_PLATFORM_NT
+    #include <stddef.h>
     #ifndef _SSIZE_T_DEFINED
     #define _SSIZE_T_DEFINED
-    typedef __int64 ssize_t;
+    typedef intptr_t ssize_t;
     #endif
 #endif
 
