@@ -242,6 +242,11 @@ static inline int pthread_cond_wait(pthread_cond_t* cond, pthread_mutex_t* mutex
     return SleepConditionVariableSRW(cond, mutex, INFINITE, 0) ? 0 : EINVAL;
 }
 
+/*
+ * Wait until signalled or until the absolute UTC deadline in `abstime`.
+ * Returns 0 on success, ETIMEDOUT on timeout, and EINVAL for invalid input
+ * or other wait failures, matching pthread_cond_timedwait semantics.
+ */
 static inline int pthread_cond_timedwait(
     pthread_cond_t* cond,
     pthread_mutex_t* mutex,
@@ -289,10 +294,6 @@ static inline int pthread_cond_broadcast(pthread_cond_t* cond) {
     }
     WakeAllConditionVariable(cond);
     return 0;
-}
-
-static inline pthread_t pthread_self(void) {
-    return GetCurrentThread();
 }
 
 #else
