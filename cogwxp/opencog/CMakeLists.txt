@@ -160,7 +160,9 @@ set(PLN_HEADERS
 
 add_library(pln ${PLN_SOURCES})
 target_link_libraries(pln PUBLIC atomspace)
-target_link_libraries(pln PRIVATE m)
+if(NOT WIN32)
+    target_link_libraries(pln PRIVATE m)
+endif()
 
 if(ENABLE_9P_INTEGRATION)
     target_compile_definitions(pln PRIVATE ENABLE_9P_INTEGRATION=1)
