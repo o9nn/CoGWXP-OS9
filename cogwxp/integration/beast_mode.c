@@ -77,7 +77,7 @@ static void update_reactor_state(beast_reactor_t reactor) {
  * Initialization and Shutdown
  *===========================================================================*/
 
-COGUTIL_API cog_result_t beast_reactor_init(
+COGWXPOS_API cog_result_t beast_reactor_init(
     const beast_config_t* config,
     beast_reactor_t* reactor
 ) {
@@ -117,7 +117,7 @@ COGUTIL_API cog_result_t beast_reactor_init(
     return COG_SUCCESS;
 }
 
-COGUTIL_API void beast_reactor_shutdown(beast_reactor_t reactor) {
+COGWXPOS_API void beast_reactor_shutdown(beast_reactor_t reactor) {
     if (!reactor) return;
     
     printf("[BeastReactor] Shutting down...\n");
@@ -154,7 +154,7 @@ COGUTIL_API void beast_reactor_shutdown(beast_reactor_t reactor) {
  * Reactor Control
  *===========================================================================*/
 
-COGUTIL_API cog_result_t beast_set_intensity(
+COGWXPOS_API cog_result_t beast_set_intensity(
     beast_reactor_t reactor,
     beast_intensity_t intensity
 ) {
@@ -198,7 +198,7 @@ COGUTIL_API cog_result_t beast_set_intensity(
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t beast_get_state(
+COGWXPOS_API cog_result_t beast_get_state(
     beast_reactor_t reactor,
     beast_reactor_state_t* state
 ) {
@@ -212,7 +212,7 @@ COGUTIL_API cog_result_t beast_get_state(
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t beast_configure_mode(
+COGWXPOS_API cog_result_t beast_configure_mode(
     beast_reactor_t reactor,
     beast_reason_mode_t mode,
     bool enabled
@@ -223,7 +223,7 @@ COGUTIL_API cog_result_t beast_configure_mode(
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t beast_emergency_stop(beast_reactor_t reactor) {
+COGWXPOS_API cog_result_t beast_emergency_stop(beast_reactor_t reactor) {
     if (!reactor) return COG_ERROR_INVALID_ARG;
     
     pthread_mutex_lock(&reactor->lock);
@@ -256,7 +256,7 @@ static beast_fusion_result_t* create_fusion_result(size_t result_count) {
     return result;
 }
 
-COGUTIL_API cog_result_t beast_fuse(
+COGWXPOS_API cog_result_t beast_fuse(
     beast_reactor_t reactor,
     atom_handle_t goal,
     beast_fusion_strategy_t strategy,
@@ -303,7 +303,7 @@ COGUTIL_API cog_result_t beast_fuse(
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t beast_fuse_auto(
+COGWXPOS_API cog_result_t beast_fuse_auto(
     beast_reactor_t reactor,
     atom_handle_t goal,
     beast_fusion_result_t** result
@@ -320,7 +320,7 @@ COGUTIL_API cog_result_t beast_fuse_auto(
     return beast_fuse(reactor, goal, BEAST_FUSION_ENSEMBLE, modes, 3, result);
 }
 
-COGUTIL_API cog_result_t beast_submit_task(
+COGWXPOS_API cog_result_t beast_submit_task(
     beast_reactor_t reactor,
     beast_reactor_task_t* task,
     uint64_t* task_id
@@ -345,7 +345,7 @@ COGUTIL_API cog_result_t beast_submit_task(
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t beast_wait_task(
+COGWXPOS_API cog_result_t beast_wait_task(
     beast_reactor_t reactor,
     uint64_t task_id,
     uint32_t timeout_ms,
@@ -381,7 +381,7 @@ COGUTIL_API cog_result_t beast_wait_task(
  * Parallel Inference
  *===========================================================================*/
 
-COGUTIL_API cog_result_t beast_parallel_infer(
+COGWXPOS_API cog_result_t beast_parallel_infer(
     beast_reactor_t reactor,
     atom_handle_t* premises,
     size_t premise_count,
@@ -404,7 +404,7 @@ COGUTIL_API cog_result_t beast_parallel_infer(
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t beast_distributed_infer(
+COGWXPOS_API cog_result_t beast_distributed_infer(
     beast_reactor_t reactor,
     atom_handle_t goal,
     atomspace_t* sub_atomspaces,
@@ -426,7 +426,7 @@ COGUTIL_API cog_result_t beast_distributed_infer(
  * Attention Amplification
  *===========================================================================*/
 
-COGUTIL_API cog_result_t beast_boost_attention(
+COGWXPOS_API cog_result_t beast_boost_attention(
     beast_reactor_t reactor,
     atom_handle_t* atoms,
     size_t atom_count,
@@ -442,7 +442,7 @@ COGUTIL_API cog_result_t beast_boost_attention(
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t beast_focus_attention(
+COGWXPOS_API cog_result_t beast_focus_attention(
     beast_reactor_t reactor,
     atom_handle_t root,
     size_t depth
@@ -453,7 +453,7 @@ COGUTIL_API cog_result_t beast_focus_attention(
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t beast_allocate_attention(
+COGWXPOS_API cog_result_t beast_allocate_attention(
     beast_reactor_t reactor,
     atom_handle_t goal,
     double attention_budget
@@ -468,7 +468,7 @@ COGUTIL_API cog_result_t beast_allocate_attention(
  * Integration with Niche Construction
  *===========================================================================*/
 
-COGUTIL_API cog_result_t beast_fuse_with_skills(
+COGWXPOS_API cog_result_t beast_fuse_with_skills(
     beast_reactor_t reactor,
     atom_handle_t goal,
     niche_skill_t** skills,
@@ -486,7 +486,7 @@ COGUTIL_API cog_result_t beast_fuse_with_skills(
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t beast_extract_skills(
+COGWXPOS_API cog_result_t beast_extract_skills(
     beast_reactor_t reactor,
     beast_fusion_result_t* result,
     niche_skill_t** extracted_skills,
@@ -504,7 +504,7 @@ COGUTIL_API cog_result_t beast_extract_skills(
  * Statistics and Telemetry
  *===========================================================================*/
 
-COGUTIL_API cog_result_t beast_get_telemetry(
+COGWXPOS_API cog_result_t beast_get_telemetry(
     beast_reactor_t reactor,
     char** telemetry_json,
     size_t* json_size
@@ -548,7 +548,7 @@ COGUTIL_API cog_result_t beast_get_telemetry(
     return COG_SUCCESS;
 }
 
-COGUTIL_API void beast_reset_telemetry(beast_reactor_t reactor) {
+COGWXPOS_API void beast_reset_telemetry(beast_reactor_t reactor) {
     if (!reactor) return;
     
     pthread_mutex_lock(&reactor->lock);
@@ -565,7 +565,7 @@ COGUTIL_API void beast_reset_telemetry(beast_reactor_t reactor) {
  * Memory Management
  *===========================================================================*/
 
-COGUTIL_API void beast_free_result(beast_fusion_result_t* result) {
+COGWXPOS_API void beast_free_result(beast_fusion_result_t* result) {
     if (!result) return;
     
     free(result->results);
@@ -575,7 +575,7 @@ COGUTIL_API void beast_free_result(beast_fusion_result_t* result) {
     free(result);
 }
 
-COGUTIL_API void beast_free_task(beast_reactor_task_t* task) {
+COGWXPOS_API void beast_free_task(beast_reactor_task_t* task) {
     if (!task) return;
     
     if (task->result) {
@@ -586,41 +586,41 @@ COGUTIL_API void beast_free_task(beast_reactor_task_t* task) {
 }
 
 /* Stub implementations for remaining functions */
-COGUTIL_API cog_result_t beast_cancel_task(beast_reactor_t reactor, uint64_t task_id) {
+COGWXPOS_API cog_result_t beast_cancel_task(beast_reactor_t reactor, uint64_t task_id) {
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t beast_evaluate_reasoning(beast_reactor_t reactor,
+COGWXPOS_API cog_result_t beast_evaluate_reasoning(beast_reactor_t reactor,
     beast_fusion_result_t* result, double* quality_score) {
     *quality_score = 0.85;
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t beast_adapt_strategy(beast_reactor_t reactor,
+COGWXPOS_API cog_result_t beast_adapt_strategy(beast_reactor_t reactor,
     beast_reactor_task_t* task, beast_fusion_strategy_t* new_strategy) {
     *new_strategy = BEAST_FUSION_ENSEMBLE;
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t beast_detect_bottlenecks(beast_reactor_t reactor,
+COGWXPOS_API cog_result_t beast_detect_bottlenecks(beast_reactor_t reactor,
     char** bottleneck_report, size_t* report_size) {
     *bottleneck_report = strdup("No bottlenecks detected");
     *report_size = strlen(*bottleneck_report);
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t beast_assign_credit(beast_reactor_t reactor,
+COGWXPOS_API cog_result_t beast_assign_credit(beast_reactor_t reactor,
     atom_handle_t* inference_chain, size_t chain_length, double final_reward) {
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t beast_compute_value(beast_reactor_t reactor,
+COGWXPOS_API cog_result_t beast_compute_value(beast_reactor_t reactor,
     atom_handle_t inference, double* value) {
     *value = 0.5;
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t beast_export_profile(beast_reactor_t reactor,
+COGWXPOS_API cog_result_t beast_export_profile(beast_reactor_t reactor,
     const char* output_path) {
     printf("[BeastReactor] Exported profile to %s\n", output_path);
     return COG_SUCCESS;

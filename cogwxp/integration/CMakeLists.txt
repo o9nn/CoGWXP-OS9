@@ -128,6 +128,10 @@ set(COGWXP_OS_HEADERS
 add_library(cogwxp_os ${COGWXP_OS_SOURCES})
 target_link_libraries(cogwxp_os PUBLIC unified_bridge)
 
+if(WIN32)
+    target_compile_definitions(cogwxp_os PRIVATE COGWXPOS_EXPORTS)
+endif()
+
 set_target_properties(cogwxp_os PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1

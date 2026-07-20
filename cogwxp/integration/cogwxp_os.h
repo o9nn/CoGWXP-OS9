@@ -111,7 +111,7 @@ typedef struct cogwxp_config {
     beast_config_t beast_config;
 } cogwxp_config_t;
 
-COGUTIL_API cogwxp_config_t cogwxp_config_default(void);
+COGWXPOS_API cogwxp_config_t cogwxp_config_default(void);
 
 /*===========================================================================
  * System Handle
@@ -136,7 +136,7 @@ typedef struct cogwxp_system* cogwxp_system_t;
  * 7. CogW7OS Kernel (cognitive extensions)
  * 8. Unified Bridge (integration layer)
  */
-COGUTIL_API cogwxp_system_t cogwxp_init(cogwxp_config_t* config);
+COGWXPOS_API cogwxp_system_t cogwxp_init(cogwxp_config_t* config);
 
 /**
  * Start the CoGWXP-OS system
@@ -147,7 +147,7 @@ COGUTIL_API cogwxp_system_t cogwxp_init(cogwxp_config_t* config);
  * - Dis VM begins execution
  * - Agents are activated
  */
-COGUTIL_API cog_result_t cogwxp_start(cogwxp_system_t system);
+COGWXPOS_API cog_result_t cogwxp_start(cogwxp_system_t system);
 
 /**
  * Stop the CoGWXP-OS system
@@ -157,7 +157,7 @@ COGUTIL_API cog_result_t cogwxp_start(cogwxp_system_t system);
  * - Pending tasks are completed or cancelled
  * - Network connections are closed
  */
-COGUTIL_API cog_result_t cogwxp_stop(cogwxp_system_t system);
+COGWXPOS_API cog_result_t cogwxp_stop(cogwxp_system_t system);
 
 /**
  * Shutdown the CoGWXP-OS system
@@ -167,12 +167,12 @@ COGUTIL_API cog_result_t cogwxp_stop(cogwxp_system_t system);
  * - Memory is freed
  * - Logs are flushed
  */
-COGUTIL_API void cogwxp_shutdown(cogwxp_system_t system);
+COGWXPOS_API void cogwxp_shutdown(cogwxp_system_t system);
 
 /**
  * Get current system state
  */
-COGUTIL_API cogwxp_state_t cogwxp_get_state(cogwxp_system_t system);
+COGWXPOS_API cogwxp_state_t cogwxp_get_state(cogwxp_system_t system);
 
 /*===========================================================================
  * Component Access
@@ -181,42 +181,42 @@ COGUTIL_API cogwxp_state_t cogwxp_get_state(cogwxp_system_t system);
 /**
  * Get the global AtomSpace
  */
-COGUTIL_API atomspace_t cogwxp_get_atomspace(cogwxp_system_t system);
+COGWXPOS_API atomspace_t cogwxp_get_atomspace(cogwxp_system_t system);
 
 /**
  * Get the PLN engine
  */
-COGUTIL_API pln_engine_t cogwxp_get_pln(cogwxp_system_t system);
+COGWXPOS_API pln_engine_t cogwxp_get_pln(cogwxp_system_t system);
 
 /**
  * Get the CogServer
  */
-COGUTIL_API cogserver_t cogwxp_get_cogserver(cogwxp_system_t system);
+COGWXPOS_API cogserver_t cogwxp_get_cogserver(cogwxp_system_t system);
 
 /**
  * Get the Dis VM
  */
-COGUTIL_API dis_vm_t* cogwxp_get_dis_vm(cogwxp_system_t system);
+COGWXPOS_API dis_vm_t* cogwxp_get_dis_vm(cogwxp_system_t system);
 
 /**
  * Get the 9P server
  */
-COGUTIL_API p9_server_t cogwxp_get_9p_server(cogwxp_system_t system);
+COGWXPOS_API p9_server_t cogwxp_get_9p_server(cogwxp_system_t system);
 
 /**
  * Get the unified bridge
  */
-COGUTIL_API unified_bridge_t cogwxp_get_bridge(cogwxp_system_t system);
+COGWXPOS_API unified_bridge_t cogwxp_get_bridge(cogwxp_system_t system);
 
 /**
  * Get the niche construction engine
  */
-COGUTIL_API niche_engine_t cogwxp_get_niche_engine(cogwxp_system_t system);
+COGWXPOS_API niche_engine_t cogwxp_get_niche_engine(cogwxp_system_t system);
 
 /**
  * Get the beast mode reactor
  */
-COGUTIL_API beast_reactor_t cogwxp_get_beast_reactor(cogwxp_system_t system);
+COGWXPOS_API beast_reactor_t cogwxp_get_beast_reactor(cogwxp_system_t system);
 
 /*===========================================================================
  * High-Level Knowledge Operations
@@ -225,7 +225,7 @@ COGUTIL_API beast_reactor_t cogwxp_get_beast_reactor(cogwxp_system_t system);
 /**
  * Add a concept to the knowledge base
  */
-COGUTIL_API atom_handle_t cogwxp_add_concept(
+COGWXPOS_API atom_handle_t cogwxp_add_concept(
     cogwxp_system_t system,
     const char* name,
     double truth_strength,
@@ -235,7 +235,7 @@ COGUTIL_API atom_handle_t cogwxp_add_concept(
 /**
  * Add a relationship between concepts
  */
-COGUTIL_API atom_handle_t cogwxp_add_relationship(
+COGWXPOS_API atom_handle_t cogwxp_add_relationship(
     cogwxp_system_t system,
     atom_type_t link_type,
     atom_handle_t source,
@@ -247,7 +247,7 @@ COGUTIL_API atom_handle_t cogwxp_add_relationship(
 /**
  * Query the knowledge base
  */
-COGUTIL_API atom_handle_t* cogwxp_query(
+COGWXPOS_API atom_handle_t* cogwxp_query(
     cogwxp_system_t system,
     const char* query_pattern,
     size_t* result_count
@@ -256,7 +256,7 @@ COGUTIL_API atom_handle_t* cogwxp_query(
 /**
  * Perform inference from a source atom
  */
-COGUTIL_API atom_handle_t* cogwxp_infer(
+COGWXPOS_API atom_handle_t* cogwxp_infer(
     cogwxp_system_t system,
     atom_handle_t source,
     size_t max_steps,
@@ -270,7 +270,7 @@ COGUTIL_API atom_handle_t* cogwxp_infer(
 /**
  * Create and start a cognitive agent
  */
-COGUTIL_API uint64_t cogwxp_spawn_agent(
+COGWXPOS_API uint64_t cogwxp_spawn_agent(
     cogwxp_system_t system,
     const char* name,
     agent_type_t type,
@@ -281,7 +281,7 @@ COGUTIL_API uint64_t cogwxp_spawn_agent(
 /**
  * Assign a goal to an agent
  */
-COGUTIL_API cog_result_t cogwxp_assign_goal(
+COGWXPOS_API cog_result_t cogwxp_assign_goal(
     cogwxp_system_t system,
     uint64_t agent_id,
     atom_handle_t goal
@@ -290,7 +290,7 @@ COGUTIL_API cog_result_t cogwxp_assign_goal(
 /**
  * Send a message to an agent
  */
-COGUTIL_API cog_result_t cogwxp_send_to_agent(
+COGWXPOS_API cog_result_t cogwxp_send_to_agent(
     cogwxp_system_t system,
     uint64_t agent_id,
     const char* message_type,
@@ -300,7 +300,7 @@ COGUTIL_API cog_result_t cogwxp_send_to_agent(
 /**
  * Wait for an agent to complete its current goal
  */
-COGUTIL_API cog_result_t cogwxp_wait_agent(
+COGWXPOS_API cog_result_t cogwxp_wait_agent(
     cogwxp_system_t system,
     uint64_t agent_id,
     uint32_t timeout_ms
@@ -313,7 +313,7 @@ COGUTIL_API cog_result_t cogwxp_wait_agent(
 /**
  * Submit a task for execution
  */
-COGUTIL_API uint64_t cogwxp_submit_task(
+COGWXPOS_API uint64_t cogwxp_submit_task(
     cogwxp_system_t system,
     const char* name,
     atom_handle_t goal,
@@ -323,7 +323,7 @@ COGUTIL_API uint64_t cogwxp_submit_task(
 /**
  * Wait for a task to complete
  */
-COGUTIL_API cog_result_t cogwxp_wait_task(
+COGWXPOS_API cog_result_t cogwxp_wait_task(
     cogwxp_system_t system,
     uint64_t task_id,
     uint32_t timeout_ms,
@@ -334,7 +334,7 @@ COGUTIL_API cog_result_t cogwxp_wait_task(
 /**
  * Submit multiple tasks and wait for all
  */
-COGUTIL_API cog_result_t cogwxp_orchestrate(
+COGWXPOS_API cog_result_t cogwxp_orchestrate(
     cogwxp_system_t system,
     atom_handle_t* goals,
     size_t goal_count,
@@ -348,7 +348,7 @@ COGUTIL_API cog_result_t cogwxp_orchestrate(
 /**
  * Connect to a remote CoGWXP-OS peer
  */
-COGUTIL_API uint64_t cogwxp_connect_peer(
+COGWXPOS_API uint64_t cogwxp_connect_peer(
     cogwxp_system_t system,
     const char* address,
     uint16_t port
@@ -357,7 +357,7 @@ COGUTIL_API uint64_t cogwxp_connect_peer(
 /**
  * Disconnect from a peer
  */
-COGUTIL_API cog_result_t cogwxp_disconnect_peer(
+COGWXPOS_API cog_result_t cogwxp_disconnect_peer(
     cogwxp_system_t system,
     uint64_t peer_id
 );
@@ -365,7 +365,7 @@ COGUTIL_API cog_result_t cogwxp_disconnect_peer(
 /**
  * Execute distributed inference across peers
  */
-COGUTIL_API atom_handle_t* cogwxp_distributed_infer(
+COGWXPOS_API atom_handle_t* cogwxp_distributed_infer(
     cogwxp_system_t system,
     atom_handle_t source,
     uint64_t* peer_ids,
@@ -376,7 +376,7 @@ COGUTIL_API atom_handle_t* cogwxp_distributed_infer(
 /**
  * Synchronize AtomSpace with peers
  */
-COGUTIL_API cog_result_t cogwxp_sync_peers(
+COGWXPOS_API cog_result_t cogwxp_sync_peers(
     cogwxp_system_t system
 );
 
@@ -396,7 +396,7 @@ COGUTIL_API cog_result_t cogwxp_sync_peers(
  * - /p9/<name>               - p9 scopes
  * - /j9/<id>                 - j9 gradients
  */
-COGUTIL_API unified_resource_t* cogwxp_open(
+COGWXPOS_API unified_resource_t* cogwxp_open(
     cogwxp_system_t system,
     const char* path,
     uint8_t mode
@@ -405,7 +405,7 @@ COGUTIL_API unified_resource_t* cogwxp_open(
 /**
  * Read from a resource
  */
-COGUTIL_API ssize_t cogwxp_read(
+COGWXPOS_API ssize_t cogwxp_read(
     unified_resource_t* resource,
     void* buf,
     size_t count
@@ -414,7 +414,7 @@ COGUTIL_API ssize_t cogwxp_read(
 /**
  * Write to a resource
  */
-COGUTIL_API ssize_t cogwxp_write(
+COGWXPOS_API ssize_t cogwxp_write(
     unified_resource_t* resource,
     const void* data,
     size_t count
@@ -423,7 +423,7 @@ COGUTIL_API ssize_t cogwxp_write(
 /**
  * Close a resource
  */
-COGUTIL_API void cogwxp_close(unified_resource_t* resource);
+COGWXPOS_API void cogwxp_close(unified_resource_t* resource);
 
 /*===========================================================================
  * Limbo/Dis Execution
@@ -432,7 +432,7 @@ COGUTIL_API void cogwxp_close(unified_resource_t* resource);
 /**
  * Load a Limbo module
  */
-COGUTIL_API cog_result_t cogwxp_load_module(
+COGWXPOS_API cog_result_t cogwxp_load_module(
     cogwxp_system_t system,
     const char* module_path
 );
@@ -440,7 +440,7 @@ COGUTIL_API cog_result_t cogwxp_load_module(
 /**
  * Execute a Limbo function
  */
-COGUTIL_API cog_result_t cogwxp_execute(
+COGWXPOS_API cog_result_t cogwxp_execute(
     cogwxp_system_t system,
     const char* module_name,
     const char* function_name,
@@ -452,7 +452,7 @@ COGUTIL_API cog_result_t cogwxp_execute(
 /**
  * Spawn a Dis thread
  */
-COGUTIL_API uint64_t cogwxp_spawn_dis_thread(
+COGWXPOS_API uint64_t cogwxp_spawn_dis_thread(
     cogwxp_system_t system,
     const char* module_name,
     const char* function_name
@@ -465,7 +465,7 @@ COGUTIL_API uint64_t cogwxp_spawn_dis_thread(
 /**
  * Create a b9 node from an atom
  */
-COGUTIL_API b9_node_t* cogwxp_b9_from_atom(
+COGWXPOS_API b9_node_t* cogwxp_b9_from_atom(
     cogwxp_system_t system,
     atom_handle_t atom
 );
@@ -473,7 +473,7 @@ COGUTIL_API b9_node_t* cogwxp_b9_from_atom(
 /**
  * Create a p9 scope from an atomspace
  */
-COGUTIL_API p9_scope_t* cogwxp_p9_from_atomspace(
+COGWXPOS_API p9_scope_t* cogwxp_p9_from_atomspace(
     cogwxp_system_t system,
     atomspace_t atomspace
 );
@@ -481,7 +481,7 @@ COGUTIL_API p9_scope_t* cogwxp_p9_from_atomspace(
 /**
  * Create a j9 gradient for distributed inference
  */
-COGUTIL_API j9_gradient_t* cogwxp_j9_inference(
+COGWXPOS_API j9_gradient_t* cogwxp_j9_inference(
     cogwxp_system_t system,
     atom_handle_t premise,
     atom_handle_t conclusion
@@ -490,7 +490,7 @@ COGUTIL_API j9_gradient_t* cogwxp_j9_inference(
 /**
  * Propagate all j9 gradients
  */
-COGUTIL_API cog_result_t cogwxp_j9_propagate(cogwxp_system_t system);
+COGWXPOS_API cog_result_t cogwxp_j9_propagate(cogwxp_system_t system);
 
 /*===========================================================================
  * Event System
@@ -501,7 +501,7 @@ typedef void (*cogwxp_event_handler_t)(unified_event_t* event, void* user_data);
 /**
  * Subscribe to system events
  */
-COGUTIL_API cog_result_t cogwxp_subscribe(
+COGWXPOS_API cog_result_t cogwxp_subscribe(
     cogwxp_system_t system,
     unified_event_type_t event_type,
     cogwxp_event_handler_t handler,
@@ -511,7 +511,7 @@ COGUTIL_API cog_result_t cogwxp_subscribe(
 /**
  * Unsubscribe from events
  */
-COGUTIL_API cog_result_t cogwxp_unsubscribe(
+COGWXPOS_API cog_result_t cogwxp_unsubscribe(
     cogwxp_system_t system,
     unified_event_type_t event_type,
     cogwxp_event_handler_t handler
@@ -559,7 +559,7 @@ typedef struct cogwxp_stats {
     size_t j9_gradients;
 } cogwxp_stats_t;
 
-COGUTIL_API void cogwxp_get_stats(cogwxp_system_t system, cogwxp_stats_t* stats);
+COGWXPOS_API void cogwxp_get_stats(cogwxp_system_t system, cogwxp_stats_t* stats);
 
 /*===========================================================================
  * Debugging
@@ -568,12 +568,12 @@ COGUTIL_API void cogwxp_get_stats(cogwxp_system_t system, cogwxp_stats_t* stats)
 /**
  * Dump system state to log
  */
-COGUTIL_API void cogwxp_dump_state(cogwxp_system_t system);
+COGWXPOS_API void cogwxp_dump_state(cogwxp_system_t system);
 
 /**
  * Dump AtomSpace to file
  */
-COGUTIL_API cog_result_t cogwxp_dump_atomspace(
+COGWXPOS_API cog_result_t cogwxp_dump_atomspace(
     cogwxp_system_t system,
     const char* path
 );
@@ -581,7 +581,7 @@ COGUTIL_API cog_result_t cogwxp_dump_atomspace(
 /**
  * Load AtomSpace from file
  */
-COGUTIL_API cog_result_t cogwxp_load_atomspace(
+COGWXPOS_API cog_result_t cogwxp_load_atomspace(
     cogwxp_system_t system,
     const char* path
 );

@@ -26,6 +26,18 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifndef COGWXPOS_API
+#ifdef COGUTIL_PLATFORM_NT
+    #ifdef COGWXPOS_EXPORTS
+        #define COGWXPOS_API __declspec(dllexport)
+    #else
+        #define COGWXPOS_API __declspec(dllimport)
+    #endif
+#else
+    #define COGWXPOS_API
+#endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -207,7 +219,7 @@ typedef struct {
 /**
  * Initialize beast mode reactor
  */
-COGUTIL_API cog_result_t beast_reactor_init(
+COGWXPOS_API cog_result_t beast_reactor_init(
     const beast_config_t* config,
     beast_reactor_t* reactor
 );
@@ -215,7 +227,7 @@ COGUTIL_API cog_result_t beast_reactor_init(
 /**
  * Shutdown beast mode reactor
  */
-COGUTIL_API void beast_reactor_shutdown(beast_reactor_t reactor);
+COGWXPOS_API void beast_reactor_shutdown(beast_reactor_t reactor);
 
 /*===========================================================================
  * Reactor Control
@@ -224,7 +236,7 @@ COGUTIL_API void beast_reactor_shutdown(beast_reactor_t reactor);
 /**
  * Set reactor intensity level
  */
-COGUTIL_API cog_result_t beast_set_intensity(
+COGWXPOS_API cog_result_t beast_set_intensity(
     beast_reactor_t reactor,
     beast_intensity_t intensity
 );
@@ -232,7 +244,7 @@ COGUTIL_API cog_result_t beast_set_intensity(
 /**
  * Get current reactor state
  */
-COGUTIL_API cog_result_t beast_get_state(
+COGWXPOS_API cog_result_t beast_get_state(
     beast_reactor_t reactor,
     beast_reactor_state_t* state
 );
@@ -240,7 +252,7 @@ COGUTIL_API cog_result_t beast_get_state(
 /**
  * Enable/disable specific reasoning mode
  */
-COGUTIL_API cog_result_t beast_configure_mode(
+COGWXPOS_API cog_result_t beast_configure_mode(
     beast_reactor_t reactor,
     beast_reason_mode_t mode,
     bool enabled
@@ -249,7 +261,7 @@ COGUTIL_API cog_result_t beast_configure_mode(
 /**
  * Emergency shutdown (rapid cooldown)
  */
-COGUTIL_API cog_result_t beast_emergency_stop(
+COGWXPOS_API cog_result_t beast_emergency_stop(
     beast_reactor_t reactor
 );
 
@@ -260,7 +272,7 @@ COGUTIL_API cog_result_t beast_emergency_stop(
 /**
  * Execute cognitive fusion on a goal
  */
-COGUTIL_API cog_result_t beast_fuse(
+COGWXPOS_API cog_result_t beast_fuse(
     beast_reactor_t reactor,
     atom_handle_t goal,
     beast_fusion_strategy_t strategy,
@@ -272,7 +284,7 @@ COGUTIL_API cog_result_t beast_fuse(
 /**
  * Execute fusion with automatic mode selection
  */
-COGUTIL_API cog_result_t beast_fuse_auto(
+COGWXPOS_API cog_result_t beast_fuse_auto(
     beast_reactor_t reactor,
     atom_handle_t goal,
     beast_fusion_result_t** result
@@ -281,7 +293,7 @@ COGUTIL_API cog_result_t beast_fuse_auto(
 /**
  * Submit task for asynchronous fusion
  */
-COGUTIL_API cog_result_t beast_submit_task(
+COGWXPOS_API cog_result_t beast_submit_task(
     beast_reactor_t reactor,
     beast_reactor_task_t* task,
     uint64_t* task_id
@@ -290,7 +302,7 @@ COGUTIL_API cog_result_t beast_submit_task(
 /**
  * Wait for task completion
  */
-COGUTIL_API cog_result_t beast_wait_task(
+COGWXPOS_API cog_result_t beast_wait_task(
     beast_reactor_t reactor,
     uint64_t task_id,
     uint32_t timeout_ms,
@@ -300,7 +312,7 @@ COGUTIL_API cog_result_t beast_wait_task(
 /**
  * Cancel task
  */
-COGUTIL_API cog_result_t beast_cancel_task(
+COGWXPOS_API cog_result_t beast_cancel_task(
     beast_reactor_t reactor,
     uint64_t task_id
 );
@@ -312,7 +324,7 @@ COGUTIL_API cog_result_t beast_cancel_task(
 /**
  * Launch parallel inference chains
  */
-COGUTIL_API cog_result_t beast_parallel_infer(
+COGWXPOS_API cog_result_t beast_parallel_infer(
     beast_reactor_t reactor,
     atom_handle_t* premises,
     size_t premise_count,
@@ -323,7 +335,7 @@ COGUTIL_API cog_result_t beast_parallel_infer(
 /**
  * Distributed inference across multiple reasoning contexts
  */
-COGUTIL_API cog_result_t beast_distributed_infer(
+COGWXPOS_API cog_result_t beast_distributed_infer(
     beast_reactor_t reactor,
     atom_handle_t goal,
     atomspace_t* sub_atomspaces,
@@ -338,7 +350,7 @@ COGUTIL_API cog_result_t beast_distributed_infer(
 /**
  * Boost STI (Short-Term Importance) for atoms
  */
-COGUTIL_API cog_result_t beast_boost_attention(
+COGWXPOS_API cog_result_t beast_boost_attention(
     beast_reactor_t reactor,
     atom_handle_t* atoms,
     size_t atom_count,
@@ -348,7 +360,7 @@ COGUTIL_API cog_result_t beast_boost_attention(
 /**
  * Focus attention on subgraph
  */
-COGUTIL_API cog_result_t beast_focus_attention(
+COGWXPOS_API cog_result_t beast_focus_attention(
     beast_reactor_t reactor,
     atom_handle_t root,
     size_t depth
@@ -357,7 +369,7 @@ COGUTIL_API cog_result_t beast_focus_attention(
 /**
  * Dynamic attention allocation based on task
  */
-COGUTIL_API cog_result_t beast_allocate_attention(
+COGWXPOS_API cog_result_t beast_allocate_attention(
     beast_reactor_t reactor,
     atom_handle_t goal,
     double attention_budget
@@ -370,7 +382,7 @@ COGUTIL_API cog_result_t beast_allocate_attention(
 /**
  * Evaluate reasoning quality
  */
-COGUTIL_API cog_result_t beast_evaluate_reasoning(
+COGWXPOS_API cog_result_t beast_evaluate_reasoning(
     beast_reactor_t reactor,
     beast_fusion_result_t* result,
     double* quality_score
@@ -379,7 +391,7 @@ COGUTIL_API cog_result_t beast_evaluate_reasoning(
 /**
  * Adapt strategy based on performance
  */
-COGUTIL_API cog_result_t beast_adapt_strategy(
+COGWXPOS_API cog_result_t beast_adapt_strategy(
     beast_reactor_t reactor,
     beast_reactor_task_t* task,
     beast_fusion_strategy_t* new_strategy
@@ -388,7 +400,7 @@ COGUTIL_API cog_result_t beast_adapt_strategy(
 /**
  * Detect reasoning bottlenecks
  */
-COGUTIL_API cog_result_t beast_detect_bottlenecks(
+COGWXPOS_API cog_result_t beast_detect_bottlenecks(
     beast_reactor_t reactor,
     char** bottleneck_report,
     size_t* report_size
@@ -401,7 +413,7 @@ COGUTIL_API cog_result_t beast_detect_bottlenecks(
 /**
  * Use learned skills in fusion
  */
-COGUTIL_API cog_result_t beast_fuse_with_skills(
+COGWXPOS_API cog_result_t beast_fuse_with_skills(
     beast_reactor_t reactor,
     atom_handle_t goal,
     niche_skill_t** skills,
@@ -412,7 +424,7 @@ COGUTIL_API cog_result_t beast_fuse_with_skills(
 /**
  * Learn new skills from successful fusion
  */
-COGUTIL_API cog_result_t beast_extract_skills(
+COGWXPOS_API cog_result_t beast_extract_skills(
     beast_reactor_t reactor,
     beast_fusion_result_t* result,
     niche_skill_t** extracted_skills,
@@ -426,7 +438,7 @@ COGUTIL_API cog_result_t beast_extract_skills(
 /**
  * Assign credit across long inference chains
  */
-COGUTIL_API cog_result_t beast_assign_credit(
+COGWXPOS_API cog_result_t beast_assign_credit(
     beast_reactor_t reactor,
     atom_handle_t* inference_chain,
     size_t chain_length,
@@ -436,7 +448,7 @@ COGUTIL_API cog_result_t beast_assign_credit(
 /**
  * Compute value of intermediate inferences
  */
-COGUTIL_API cog_result_t beast_compute_value(
+COGWXPOS_API cog_result_t beast_compute_value(
     beast_reactor_t reactor,
     atom_handle_t inference,
     double* value
@@ -449,7 +461,7 @@ COGUTIL_API cog_result_t beast_compute_value(
 /**
  * Get reactor telemetry
  */
-COGUTIL_API cog_result_t beast_get_telemetry(
+COGWXPOS_API cog_result_t beast_get_telemetry(
     beast_reactor_t reactor,
     char** telemetry_json,
     size_t* json_size
@@ -458,12 +470,12 @@ COGUTIL_API cog_result_t beast_get_telemetry(
 /**
  * Reset telemetry counters
  */
-COGUTIL_API void beast_reset_telemetry(beast_reactor_t reactor);
+COGWXPOS_API void beast_reset_telemetry(beast_reactor_t reactor);
 
 /**
  * Export performance profile
  */
-COGUTIL_API cog_result_t beast_export_profile(
+COGWXPOS_API cog_result_t beast_export_profile(
     beast_reactor_t reactor,
     const char* output_path
 );
@@ -475,12 +487,12 @@ COGUTIL_API cog_result_t beast_export_profile(
 /**
  * Free fusion result
  */
-COGUTIL_API void beast_free_result(beast_fusion_result_t* result);
+COGWXPOS_API void beast_free_result(beast_fusion_result_t* result);
 
 /**
  * Free reactor task
  */
-COGUTIL_API void beast_free_task(beast_reactor_task_t* task);
+COGWXPOS_API void beast_free_task(beast_reactor_task_t* task);
 
 #ifdef __cplusplus
 }

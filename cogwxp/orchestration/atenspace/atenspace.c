@@ -191,7 +191,7 @@ static aten_truth_value_t default_tv(void) {
     };
 }
 
-COGUTIL_API cog_result_t aten_merge_tv(
+ATENSPACE_API cog_result_t aten_merge_tv(
     const aten_truth_value_t* tv1,
     const aten_truth_value_t* tv2,
     aten_truth_value_t* result
@@ -221,7 +221,7 @@ COGUTIL_API cog_result_t aten_merge_tv(
  * Lifecycle
  *===========================================================================*/
 
-COGUTIL_API cog_result_t aten_init(
+ATENSPACE_API cog_result_t aten_init(
     const aten_config_t* config,
     aten_context_t* ctx
 ) {
@@ -264,7 +264,7 @@ COGUTIL_API cog_result_t aten_init(
     return COG_OK;
 }
 
-COGUTIL_API void aten_shutdown(aten_context_t ctx) {
+ATENSPACE_API void aten_shutdown(aten_context_t ctx) {
     if (!ctx) return;
 
     atom_table_destroy(&ctx->atoms);
@@ -282,7 +282,7 @@ COGUTIL_API void aten_shutdown(aten_context_t ctx) {
  * Atom Creation
  *===========================================================================*/
 
-COGUTIL_API cog_result_t aten_create_node(
+ATENSPACE_API cog_result_t aten_create_node(
     aten_context_t ctx,
     aten_atom_type_t type,
     const char* name,
@@ -341,7 +341,7 @@ COGUTIL_API cog_result_t aten_create_node(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t aten_create_link(
+ATENSPACE_API cog_result_t aten_create_link(
     aten_context_t ctx,
     aten_atom_type_t type,
     const aten_handle_t* outgoing,
@@ -396,7 +396,7 @@ COGUTIL_API cog_result_t aten_create_link(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t aten_get_atom(
+ATENSPACE_API cog_result_t aten_get_atom(
     aten_context_t ctx,
     aten_handle_t handle,
     aten_atom_t* atom
@@ -413,7 +413,7 @@ COGUTIL_API cog_result_t aten_get_atom(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t aten_get_node(
+ATENSPACE_API cog_result_t aten_get_node(
     aten_context_t ctx,
     aten_atom_type_t type,
     const char* name,
@@ -435,7 +435,7 @@ COGUTIL_API cog_result_t aten_get_node(
  * Attention Operations
  *===========================================================================*/
 
-COGUTIL_API cog_result_t aten_stimulate(
+ATENSPACE_API cog_result_t aten_stimulate(
     aten_context_t ctx,
     aten_handle_t handle,
     float amount
@@ -475,7 +475,7 @@ COGUTIL_API cog_result_t aten_stimulate(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t aten_get_attention_focus(
+ATENSPACE_API cog_result_t aten_get_attention_focus(
     aten_context_t ctx,
     aten_handle_t** handles,
     size_t* count
@@ -501,7 +501,7 @@ COGUTIL_API cog_result_t aten_get_attention_focus(
  * Tensor/Embedding Operations
  *===========================================================================*/
 
-COGUTIL_API cog_result_t aten_tensor_similarity(
+ATENSPACE_API cog_result_t aten_tensor_similarity(
     aten_context_t ctx,
     aten_handle_t a,
     aten_handle_t b,
@@ -536,7 +536,7 @@ COGUTIL_API cog_result_t aten_tensor_similarity(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t aten_find_similar(
+ATENSPACE_API cog_result_t aten_find_similar(
     aten_context_t ctx,
     aten_handle_t reference,
     float threshold,
@@ -603,7 +603,7 @@ COGUTIL_API cog_result_t aten_find_similar(
  * Inference
  *===========================================================================*/
 
-COGUTIL_API cog_result_t aten_pln_deduction(
+ATENSPACE_API cog_result_t aten_pln_deduction(
     aten_context_t ctx,
     aten_handle_t a_implies_b,
     aten_handle_t b_implies_c,
@@ -655,7 +655,7 @@ COGUTIL_API cog_result_t aten_pln_deduction(
  * Statistics
  *===========================================================================*/
 
-COGUTIL_API cog_result_t aten_get_stats(
+ATENSPACE_API cog_result_t aten_get_stats(
     aten_context_t ctx,
     aten_stats_t* stats
 ) {
@@ -668,7 +668,7 @@ COGUTIL_API cog_result_t aten_get_stats(
     return COG_OK;
 }
 
-COGUTIL_API void aten_reset_stats(aten_context_t ctx) {
+ATENSPACE_API void aten_reset_stats(aten_context_t ctx) {
     if (!ctx) return;
 
     pthread_mutex_lock(&ctx->stats_lock);
@@ -680,7 +680,7 @@ COGUTIL_API void aten_reset_stats(aten_context_t ctx) {
  * Atom Removal
  *===========================================================================*/
 
-COGUTIL_API cog_result_t aten_remove_atom(
+ATENSPACE_API cog_result_t aten_remove_atom(
     aten_context_t ctx,
     aten_handle_t handle,
     bool recursive
@@ -755,7 +755,7 @@ COGUTIL_API cog_result_t aten_remove_atom(
  * Truth Value Operations
  *===========================================================================*/
 
-COGUTIL_API cog_result_t aten_set_tv(
+ATENSPACE_API cog_result_t aten_set_tv(
     aten_context_t ctx,
     aten_handle_t handle,
     const aten_truth_value_t* tv
@@ -774,7 +774,7 @@ COGUTIL_API cog_result_t aten_set_tv(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t aten_get_tv(
+ATENSPACE_API cog_result_t aten_get_tv(
     aten_context_t ctx,
     aten_handle_t handle,
     aten_truth_value_t* tv
@@ -797,7 +797,7 @@ COGUTIL_API cog_result_t aten_get_tv(
  * Attention Value Operations
  *===========================================================================*/
 
-COGUTIL_API cog_result_t aten_set_av(
+ATENSPACE_API cog_result_t aten_set_av(
     aten_context_t ctx,
     aten_handle_t handle,
     const aten_attention_value_t* av
@@ -816,7 +816,7 @@ COGUTIL_API cog_result_t aten_set_av(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t aten_get_av(
+ATENSPACE_API cog_result_t aten_get_av(
     aten_context_t ctx,
     aten_handle_t handle,
     aten_attention_value_t* av
@@ -839,7 +839,7 @@ COGUTIL_API cog_result_t aten_get_av(
  * ECAN Step
  *===========================================================================*/
 
-COGUTIL_API cog_result_t aten_ecan_step(aten_context_t ctx) {
+ATENSPACE_API cog_result_t aten_ecan_step(aten_context_t ctx) {
     if (!ctx) return COG_ERROR_INVALID_PARAM;
 
     pthread_rwlock_wrlock(&ctx->atoms.lock);
@@ -913,7 +913,7 @@ COGUTIL_API cog_result_t aten_ecan_step(aten_context_t ctx) {
  * Embedding Operations
  *===========================================================================*/
 
-COGUTIL_API cog_result_t aten_set_embedding(
+ATENSPACE_API cog_result_t aten_set_embedding(
     aten_context_t ctx,
     aten_handle_t handle,
     const float* embedding,
@@ -950,7 +950,7 @@ COGUTIL_API cog_result_t aten_set_embedding(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t aten_get_embedding(
+ATENSPACE_API cog_result_t aten_get_embedding(
     aten_context_t ctx,
     aten_handle_t handle,
     float** embedding,
@@ -980,7 +980,7 @@ COGUTIL_API cog_result_t aten_get_embedding(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t aten_batch_embed(
+ATENSPACE_API cog_result_t aten_batch_embed(
     aten_context_t ctx,
     const char** texts,
     size_t count,
@@ -1028,7 +1028,7 @@ COGUTIL_API cog_result_t aten_batch_embed(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t aten_tensor_matmul(
+ATENSPACE_API cog_result_t aten_tensor_matmul(
     aten_context_t ctx,
     const aten_tensor_t* a,
     const aten_tensor_t* b,
@@ -1096,7 +1096,7 @@ COGUTIL_API cog_result_t aten_tensor_matmul(
  * Traversal
  *===========================================================================*/
 
-COGUTIL_API cog_result_t aten_get_incoming(
+ATENSPACE_API cog_result_t aten_get_incoming(
     aten_context_t ctx,
     aten_handle_t handle,
     aten_atom_type_t filter_type,
@@ -1147,7 +1147,7 @@ COGUTIL_API cog_result_t aten_get_incoming(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t aten_get_outgoing(
+ATENSPACE_API cog_result_t aten_get_outgoing(
     aten_context_t ctx,
     aten_handle_t handle,
     aten_handle_t** atoms,
@@ -1179,7 +1179,7 @@ COGUTIL_API cog_result_t aten_get_outgoing(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t aten_get_by_type(
+ATENSPACE_API cog_result_t aten_get_by_type(
     aten_context_t ctx,
     aten_atom_type_t type,
     aten_handle_t** handles,
@@ -1214,7 +1214,7 @@ COGUTIL_API cog_result_t aten_get_by_type(
  * Pattern Matching (BindLink / GetLink)
  *===========================================================================*/
 
-COGUTIL_API cog_result_t aten_pattern_match(
+ATENSPACE_API cog_result_t aten_pattern_match(
     aten_context_t ctx,
     const aten_pattern_query_t* query,
     aten_match_result_t** results,
@@ -1275,7 +1275,7 @@ COGUTIL_API cog_result_t aten_pattern_match(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t aten_bind(
+ATENSPACE_API cog_result_t aten_bind(
     aten_context_t ctx,
     aten_handle_t bind_link,
     aten_handle_t** results,
@@ -1325,7 +1325,7 @@ COGUTIL_API cog_result_t aten_bind(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t aten_get(
+ATENSPACE_API cog_result_t aten_get(
     aten_context_t ctx,
     aten_handle_t get_link,
     aten_handle_t** results,
@@ -1372,7 +1372,7 @@ COGUTIL_API cog_result_t aten_get(
  * Inference Chains
  *===========================================================================*/
 
-COGUTIL_API cog_result_t aten_forward_chain(
+ATENSPACE_API cog_result_t aten_forward_chain(
     aten_context_t ctx,
     aten_handle_t source,
     const aten_inference_rule_t* rules,
@@ -1464,7 +1464,7 @@ COGUTIL_API cog_result_t aten_forward_chain(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t aten_backward_chain(
+ATENSPACE_API cog_result_t aten_backward_chain(
     aten_context_t ctx,
     aten_handle_t target,
     const aten_inference_rule_t* rules,
@@ -1550,7 +1550,7 @@ COGUTIL_API cog_result_t aten_backward_chain(
     return COG_OK;
 }
 
-COGUTIL_API void aten_inference_result_free(aten_inference_result_t* result) {
+ATENSPACE_API void aten_inference_result_free(aten_inference_result_t* result) {
     if (!result) return;
     for (size_t i = 0; i < result->step_count; i++) {
         free(result->steps[i].premises);
@@ -1564,7 +1564,7 @@ COGUTIL_API void aten_inference_result_free(aten_inference_result_t* result) {
  * Persistence
  *===========================================================================*/
 
-COGUTIL_API cog_result_t aten_save(
+ATENSPACE_API cog_result_t aten_save(
     aten_context_t ctx,
     const char* path
 ) {
@@ -1618,7 +1618,7 @@ COGUTIL_API cog_result_t aten_save(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t aten_load(
+ATENSPACE_API cog_result_t aten_load(
     aten_context_t ctx,
     const char* path
 ) {
@@ -1724,7 +1724,7 @@ static void aten_write_atomese_node(
     if (n > 0) *pos += (size_t)n;
 }
 
-COGUTIL_API cog_result_t aten_export_atomese(
+ATENSPACE_API cog_result_t aten_export_atomese(
     aten_context_t ctx,
     aten_handle_t root,
     char** atomese
@@ -1747,7 +1747,7 @@ COGUTIL_API cog_result_t aten_export_atomese(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t aten_import_atomese(
+ATENSPACE_API cog_result_t aten_import_atomese(
     aten_context_t ctx,
     const char* atomese,
     aten_handle_t* root

@@ -209,7 +209,7 @@ static float hm_activation_backward(hm_activation_t activation, float x, float g
  * Lifecycle
  *===========================================================================*/
 
-COGUTIL_API cog_result_t hm_init(
+ATENSPACE_API cog_result_t hm_init(
     const hm_config_t* config,
     hm_context_t* ctx
 ) {
@@ -234,7 +234,7 @@ COGUTIL_API cog_result_t hm_init(
     return COG_OK;
 }
 
-COGUTIL_API void hm_shutdown(hm_context_t ctx) {
+ATENSPACE_API void hm_shutdown(hm_context_t ctx) {
     if (!ctx) return;
 
     /* Clean up actors */
@@ -251,7 +251,7 @@ COGUTIL_API void hm_shutdown(hm_context_t ctx) {
  * Actor Operations
  *===========================================================================*/
 
-COGUTIL_API cog_result_t hm_create_actor(
+ATENSPACE_API cog_result_t hm_create_actor(
     hm_context_t ctx,
     hm_actor_type_t type,
     const char* name,
@@ -290,7 +290,7 @@ COGUTIL_API cog_result_t hm_create_actor(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_destroy_actor(
+ATENSPACE_API cog_result_t hm_destroy_actor(
     hm_context_t ctx,
     hm_actor_id_t actor_id
 ) {
@@ -311,7 +311,7 @@ COGUTIL_API cog_result_t hm_destroy_actor(
     return COG_ERROR_NOT_FOUND;
 }
 
-COGUTIL_API cog_result_t hm_send_message(
+ATENSPACE_API cog_result_t hm_send_message(
     hm_context_t ctx,
     const hm_message_t* message
 ) {
@@ -352,7 +352,7 @@ COGUTIL_API cog_result_t hm_send_message(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_broadcast_message(
+ATENSPACE_API cog_result_t hm_broadcast_message(
     hm_context_t ctx,
     hm_actor_type_t target_type,
     const hm_message_t* message
@@ -376,7 +376,7 @@ COGUTIL_API cog_result_t hm_broadcast_message(
  * Reactive Streams
  *===========================================================================*/
 
-COGUTIL_API cog_result_t hm_create_stream(
+ATENSPACE_API cog_result_t hm_create_stream(
     hm_context_t ctx,
     hm_stream_type_t type,
     hm_stream_callback_t callback,
@@ -405,7 +405,7 @@ COGUTIL_API cog_result_t hm_create_stream(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_stream_push(
+ATENSPACE_API cog_result_t hm_stream_push(
     hm_context_t ctx,
     hm_stream_id_t stream_id,
     const void* data,
@@ -440,7 +440,7 @@ COGUTIL_API cog_result_t hm_stream_push(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_stream_close(
+ATENSPACE_API cog_result_t hm_stream_close(
     hm_context_t ctx,
     hm_stream_id_t stream_id
 ) {
@@ -460,7 +460,7 @@ COGUTIL_API cog_result_t hm_stream_close(
  * Session Management
  *===========================================================================*/
 
-COGUTIL_API cog_result_t hm_create_session(
+ATENSPACE_API cog_result_t hm_create_session(
     hm_context_t ctx,
     const hm_session_config_t* config,
     hm_session_t* session
@@ -539,7 +539,7 @@ COGUTIL_API cog_result_t hm_create_session(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_start_session(hm_session_t session) {
+ATENSPACE_API cog_result_t hm_start_session(hm_session_t session) {
     if (!session) return COG_ERROR_INVALID_ARGUMENT;
 
     for (size_t i = 0; i < session->reactor_count; i++) {
@@ -550,7 +550,7 @@ COGUTIL_API cog_result_t hm_start_session(hm_session_t session) {
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_stop_session(hm_session_t session) {
+ATENSPACE_API cog_result_t hm_stop_session(hm_session_t session) {
     if (!session) return COG_ERROR_INVALID_ARGUMENT;
 
     for (size_t i = 0; i < session->reactor_count; i++) {
@@ -561,7 +561,7 @@ COGUTIL_API cog_result_t hm_stop_session(hm_session_t session) {
     return COG_OK;
 }
 
-COGUTIL_API void hm_destroy_session(hm_session_t session) {
+ATENSPACE_API void hm_destroy_session(hm_session_t session) {
     if (!session) return;
 
     for (size_t i = 0; i < session->reactor_count; i++) {
@@ -576,7 +576,7 @@ COGUTIL_API void hm_destroy_session(hm_session_t session) {
  * Command Execution
  *===========================================================================*/
 
-COGUTIL_API cog_result_t hm_submit_command(
+ATENSPACE_API cog_result_t hm_submit_command(
     hm_session_t session,
     hm_command_type_t type,
     const void* input,
@@ -619,7 +619,7 @@ COGUTIL_API cog_result_t hm_submit_command(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_wait_command(
+ATENSPACE_API cog_result_t hm_wait_command(
     hm_session_t session,
     hm_command_id_t cmd_id,
     uint32_t timeout_ms,
@@ -639,7 +639,7 @@ COGUTIL_API cog_result_t hm_wait_command(
     return COG_ERROR_NOT_FOUND;
 }
 
-COGUTIL_API cog_result_t hm_cancel_command(
+ATENSPACE_API cog_result_t hm_cancel_command(
     hm_session_t session,
     hm_command_id_t cmd_id
 ) {
@@ -680,7 +680,7 @@ static void hm_init_layer_weights(hm_layer_internal_t* layer) {
     }
 }
 
-COGUTIL_API cog_result_t hm_create_model(
+ATENSPACE_API cog_result_t hm_create_model(
     hm_context_t ctx,
     const hm_model_config_t* config,
     hm_model_t* model
@@ -764,7 +764,7 @@ COGUTIL_API cog_result_t hm_create_model(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_model_forward(
+ATENSPACE_API cog_result_t hm_model_forward(
     hm_model_t model,
     const hm_tensor_t* input,
     hm_tensor_t** output
@@ -893,7 +893,7 @@ COGUTIL_API cog_result_t hm_model_forward(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_model_backward(
+ATENSPACE_API cog_result_t hm_model_backward(
     hm_model_t model,
     const hm_tensor_t* grad_output
 ) {
@@ -925,7 +925,7 @@ COGUTIL_API cog_result_t hm_model_backward(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_model_update(hm_model_t model) {
+ATENSPACE_API cog_result_t hm_model_update(hm_model_t model) {
     if (!model) return COG_ERROR_INVALID_ARGUMENT;
 
     /* Apply gradients with learning rate */
@@ -950,7 +950,7 @@ COGUTIL_API cog_result_t hm_model_update(hm_model_t model) {
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_model_train_batch(
+ATENSPACE_API cog_result_t hm_model_train_batch(
     hm_model_t model,
     const hm_tensor_t* input,
     const hm_tensor_t* target,
@@ -1002,7 +1002,7 @@ COGUTIL_API cog_result_t hm_model_train_batch(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_model_save(hm_model_t model, const char* path) {
+ATENSPACE_API cog_result_t hm_model_save(hm_model_t model, const char* path) {
     if (!model || !path) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -1036,7 +1036,7 @@ COGUTIL_API cog_result_t hm_model_save(hm_model_t model, const char* path) {
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_model_load(
+ATENSPACE_API cog_result_t hm_model_load(
     hm_context_t ctx,
     const char* path,
     hm_model_t* model
@@ -1093,7 +1093,7 @@ COGUTIL_API cog_result_t hm_model_load(
     return COG_OK;
 }
 
-COGUTIL_API void hm_destroy_model(hm_model_t model) {
+ATENSPACE_API void hm_destroy_model(hm_model_t model) {
     if (!model) return;
 
     for (size_t i = 0; i < model->layer_count; i++) {
@@ -1113,7 +1113,7 @@ COGUTIL_API void hm_destroy_model(hm_model_t model) {
  * Tensor Operations
  *===========================================================================*/
 
-COGUTIL_API cog_result_t hm_tensor_create(
+ATENSPACE_API cog_result_t hm_tensor_create(
     hm_context_t ctx,
     const size_t* shape,
     size_t ndim,
@@ -1155,7 +1155,7 @@ COGUTIL_API cog_result_t hm_tensor_create(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_tensor_from_data(
+ATENSPACE_API cog_result_t hm_tensor_from_data(
     hm_context_t ctx,
     const void* data,
     const size_t* shape,
@@ -1174,13 +1174,13 @@ COGUTIL_API cog_result_t hm_tensor_from_data(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_tensor_to_device(hm_tensor_t* tensor, int device_id) {
+ATENSPACE_API cog_result_t hm_tensor_to_device(hm_tensor_t* tensor, int device_id) {
     if (!tensor) return COG_ERROR_INVALID_ARGUMENT;
     tensor->device_id = device_id;
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_tensor_matmul(
+ATENSPACE_API cog_result_t hm_tensor_matmul(
     hm_context_t ctx,
     const hm_tensor_t* a,
     const hm_tensor_t* b,
@@ -1228,7 +1228,7 @@ COGUTIL_API cog_result_t hm_tensor_matmul(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_tensor_add(
+ATENSPACE_API cog_result_t hm_tensor_add(
     hm_context_t ctx,
     const hm_tensor_t* a,
     const hm_tensor_t* b,
@@ -1259,7 +1259,7 @@ COGUTIL_API cog_result_t hm_tensor_add(
     return COG_OK;
 }
 
-COGUTIL_API void hm_tensor_free(hm_tensor_t* tensor) {
+ATENSPACE_API void hm_tensor_free(hm_tensor_t* tensor) {
     if (!tensor) return;
     free(tensor->data);
     free(tensor->shape);
@@ -1270,7 +1270,7 @@ COGUTIL_API void hm_tensor_free(hm_tensor_t* tensor) {
  * Distributed Operations
  *===========================================================================*/
 
-COGUTIL_API cog_result_t hm_cluster_join(
+ATENSPACE_API cog_result_t hm_cluster_join(
     hm_context_t ctx,
     const char* cluster_address,
     uint16_t port
@@ -1284,13 +1284,13 @@ COGUTIL_API cog_result_t hm_cluster_join(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_cluster_leave(hm_context_t ctx) {
+ATENSPACE_API cog_result_t hm_cluster_leave(hm_context_t ctx) {
     if (!ctx) return COG_ERROR_INVALID_ARGUMENT;
     ctx->in_cluster = false;
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_distributed_all_reduce(
+ATENSPACE_API cog_result_t hm_distributed_all_reduce(
     hm_context_t ctx,
     hm_tensor_t* tensor
 ) {
@@ -1309,7 +1309,7 @@ COGUTIL_API cog_result_t hm_distributed_all_reduce(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t hm_distributed_broadcast(
+ATENSPACE_API cog_result_t hm_distributed_broadcast(
     hm_context_t ctx,
     hm_tensor_t* tensor,
     int root_rank
@@ -1331,7 +1331,7 @@ COGUTIL_API cog_result_t hm_distributed_broadcast(
  * Statistics
  *===========================================================================*/
 
-COGUTIL_API cog_result_t hm_get_stats(hm_context_t ctx, hm_stats_t* stats) {
+ATENSPACE_API cog_result_t hm_get_stats(hm_context_t ctx, hm_stats_t* stats) {
     if (!ctx || !stats) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -1340,7 +1340,7 @@ COGUTIL_API cog_result_t hm_get_stats(hm_context_t ctx, hm_stats_t* stats) {
     return COG_OK;
 }
 
-COGUTIL_API void hm_reset_stats(hm_context_t ctx) {
+ATENSPACE_API void hm_reset_stats(hm_context_t ctx) {
     if (!ctx) return;
     memset(&ctx->stats, 0, sizeof(hm_stats_t));
     ctx->stats.active_actors = (uint32_t)ctx->actor_count;
