@@ -25,8 +25,9 @@ typedef void pthread_condattr_t;
 #define PTHREAD_RWLOCK_INITIALIZER { SRWLOCK_INIT }
 #define PTHREAD_COND_INITIALIZER CONDITION_VARIABLE_INIT
 
-#define COGWXP_MSEC_PER_SEC               1000ULL
+#define COGWXP_NSEC_PER_SEC               1000000000ULL
 #define COGWXP_NSEC_PER_MSEC              1000000ULL
+#define COGWXP_MAX_TIMEOUT_MS             ((uint64_t)(INFINITE - 1))
 
 typedef struct {
     void* (*start_routine)(void*);
@@ -255,28 +256,29 @@ static inline int pthread_cond_timedwait(
     DWORD timeout_ms;
     struct timespec now;
     uint64_t delta_ms;
-    uint64_t now_ms;
-    uint64_t target_ms;
+    uint64_t delta_ns;
+    uint64_t now_ns;
+    uint64_t target_ns;
 
     if (!cond || !mutex || !abstime) {
         return EINVAL;
     }
 
     timespec_get(&now, TIME_UTC);
-    now_ms = ((uint64_t)now.tv_sec * COGWXP_MSEC_PER_SEC) +
-             ((uint64_t)now.tv_nsec / COGWXP_NSEC_PER_MSEC);
-    target_ms = ((uint64_t)abstime->tv_sec * COGWXP_MSEC_PER_SEC) +
-                ((uint64_t)abstime->tv_nsec / COGWXP_NSEC_PER_MSEC);
-    if (((uint64_t)abstime->tv_nsec % COGWXP_NSEC_PER_MSEC) != 0) {
-        target_ms++;
-    }
+    now_ns = ((uint64_t)now.tv_sec * COGWXP_NSEC_PER_SEC) + (uint64_t)now.tv_nsec;
+    target_ns = ((uint64_t)abstime->tv_sec * COGWXP_NSEC_PER_SEC) +
+                (uint64_t)abstime->tv_nsec;
 
-    if (target_ms <= now_ms) {
+    if (target_ns <= now_ns) {
         timeout_ms = 0;
     } else {
-        delta_ms = target_ms - now_ms;
-        timeout_ms = (delta_ms > (uint64_t)(INFINITE - 1))
-            ? (INFINITE - 1)
+        delta_ns = target_ns - now_ns;
+        delta_ms = delta_ns / COGWXP_NSEC_PER_MSEC;
+        if ((delta_ns % COGWXP_NSEC_PER_MSEC) != 0) {
+            delta_ms++;
+        }
+        timeout_ms = (delta_ms > COGWXP_MAX_TIMEOUT_MS)
+            ? (DWORD)COGWXP_MAX_TIMEOUT_MS
             : (DWORD)delta_ms;
     }
 
