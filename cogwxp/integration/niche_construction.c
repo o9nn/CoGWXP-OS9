@@ -11,7 +11,6 @@
 #include <stdio.h>
 #include <time.h>
 #include <pthread.h>
-#include <strings.h>
 
 /*===========================================================================
  * Internal Structures
