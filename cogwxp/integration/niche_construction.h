@@ -22,6 +22,20 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifdef COGUTIL_PLATFORM_NT
+    #ifndef COGWXPOS_API
+        #ifdef COGWXPOS_EXPORTS
+            #define COGWXPOS_API __declspec(dllexport)
+        #else
+            #define COGWXPOS_API __declspec(dllimport)
+        #endif
+    #endif
+#else
+    #ifndef COGWXPOS_API
+        #define COGWXPOS_API
+    #endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -196,7 +210,7 @@ typedef struct {
 /**
  * Initialize niche construction engine
  */
-COGUTIL_API cog_result_t niche_engine_init(
+COGWXPOS_API cog_result_t niche_engine_init(
     const niche_config_t* config,
     niche_engine_t* engine
 );
@@ -204,7 +218,7 @@ COGUTIL_API cog_result_t niche_engine_init(
 /**
  * Shutdown niche construction engine
  */
-COGUTIL_API void niche_engine_shutdown(niche_engine_t engine);
+COGWXPOS_API void niche_engine_shutdown(niche_engine_t engine);
 
 /*===========================================================================
  * Skill Development
@@ -213,7 +227,7 @@ COGUTIL_API void niche_engine_shutdown(niche_engine_t engine);
 /**
  * Propose a new technique via generative model
  */
-COGUTIL_API cog_result_t niche_propose_technique(
+COGWXPOS_API cog_result_t niche_propose_technique(
     niche_engine_t engine,
     atom_handle_t intent,
     void* context,
@@ -225,7 +239,7 @@ COGUTIL_API cog_result_t niche_propose_technique(
 /**
  * Normalize/evaluate proposals via critic
  */
-COGUTIL_API cog_result_t niche_normalize_proposals(
+COGWXPOS_API cog_result_t niche_normalize_proposals(
     niche_engine_t engine,
     niche_glyph_t** proposals,
     size_t proposal_count,
@@ -235,7 +249,7 @@ COGUTIL_API cog_result_t niche_normalize_proposals(
 /**
  * Refine a technique based on feedback
  */
-COGUTIL_API cog_result_t niche_refine_technique(
+COGWXPOS_API cog_result_t niche_refine_technique(
     niche_engine_t engine,
     niche_glyph_t* glyph,
     niche_trace_t* execution_trace,
@@ -245,7 +259,7 @@ COGUTIL_API cog_result_t niche_refine_technique(
 /**
  * Commit a technique as a learned skill
  */
-COGUTIL_API cog_result_t niche_commit_skill(
+COGWXPOS_API cog_result_t niche_commit_skill(
     niche_engine_t engine,
     niche_glyph_t* glyph,
     const char* skill_name,
@@ -261,7 +275,7 @@ COGUTIL_API cog_result_t niche_commit_skill(
  * 
  * propose → score/correct → refine → (optional) commit
  */
-COGUTIL_API cog_result_t niche_opponent_cycle(
+COGWXPOS_API cog_result_t niche_opponent_cycle(
     niche_engine_t engine,
     atom_handle_t goal,
     void* context,
@@ -272,7 +286,7 @@ COGUTIL_API cog_result_t niche_opponent_cycle(
 /**
  * Run multiple opponent cycles until convergence
  */
-COGUTIL_API cog_result_t niche_train_skill(
+COGWXPOS_API cog_result_t niche_train_skill(
     niche_engine_t engine,
     atom_handle_t goal,
     niche_trace_t** training_traces,
@@ -288,7 +302,7 @@ COGUTIL_API cog_result_t niche_train_skill(
 /**
  * Execute a skill and record trace
  */
-COGUTIL_API cog_result_t niche_execute_skill(
+COGWXPOS_API cog_result_t niche_execute_skill(
     niche_engine_t engine,
     niche_skill_t* skill,
     void* inputs,
@@ -301,7 +315,7 @@ COGUTIL_API cog_result_t niche_execute_skill(
 /**
  * Decode glyph to execution trace
  */
-COGUTIL_API cog_result_t niche_glyph_to_trace(
+COGWXPOS_API cog_result_t niche_glyph_to_trace(
     niche_engine_t engine,
     niche_glyph_t* glyph,
     niche_trace_t** trace
@@ -310,7 +324,7 @@ COGUTIL_API cog_result_t niche_glyph_to_trace(
 /**
  * Encode execution trace to glyph
  */
-COGUTIL_API cog_result_t niche_trace_to_glyph(
+COGWXPOS_API cog_result_t niche_trace_to_glyph(
     niche_engine_t engine,
     niche_trace_t* trace,
     niche_glyph_t** glyph
@@ -323,7 +337,7 @@ COGUTIL_API cog_result_t niche_trace_to_glyph(
 /**
  * Propose niche action to modify environment
  */
-COGUTIL_API cog_result_t niche_propose_action(
+COGWXPOS_API cog_result_t niche_propose_action(
     niche_engine_t engine,
     atom_handle_t goal,
     niche_action_type_t action_type,
@@ -333,7 +347,7 @@ COGUTIL_API cog_result_t niche_propose_action(
 /**
  * Execute niche action (modify environment)
  */
-COGUTIL_API cog_result_t niche_execute_action(
+COGWXPOS_API cog_result_t niche_execute_action(
     niche_engine_t engine,
     niche_action_t* action
 );
@@ -341,7 +355,7 @@ COGUTIL_API cog_result_t niche_execute_action(
 /**
  * Evaluate impact of niche action
  */
-COGUTIL_API cog_result_t niche_evaluate_action(
+COGWXPOS_API cog_result_t niche_evaluate_action(
     niche_engine_t engine,
     niche_action_t* action,
     double* impact_score
@@ -350,7 +364,7 @@ COGUTIL_API cog_result_t niche_evaluate_action(
 /**
  * Rollback niche action (undo environment change)
  */
-COGUTIL_API cog_result_t niche_rollback_action(
+COGWXPOS_API cog_result_t niche_rollback_action(
     niche_engine_t engine,
     niche_action_t* action
 );
@@ -362,7 +376,7 @@ COGUTIL_API cog_result_t niche_rollback_action(
 /**
  * Query skills by intent
  */
-COGUTIL_API cog_result_t niche_query_skills(
+COGWXPOS_API cog_result_t niche_query_skills(
     niche_engine_t engine,
     atom_handle_t intent_pattern,
     niche_skill_t** skills,
@@ -372,7 +386,7 @@ COGUTIL_API cog_result_t niche_query_skills(
 /**
  * Retrieve skill by name
  */
-COGUTIL_API cog_result_t niche_get_skill(
+COGWXPOS_API cog_result_t niche_get_skill(
     niche_engine_t engine,
     const char* name,
     niche_skill_t** skill
@@ -381,7 +395,7 @@ COGUTIL_API cog_result_t niche_get_skill(
 /**
  * Update skill statistics after execution
  */
-COGUTIL_API cog_result_t niche_update_skill_stats(
+COGWXPOS_API cog_result_t niche_update_skill_stats(
     niche_engine_t engine,
     niche_skill_t* skill,
     bool success,
@@ -391,7 +405,7 @@ COGUTIL_API cog_result_t niche_update_skill_stats(
 /**
  * Compose multiple skills
  */
-COGUTIL_API cog_result_t niche_compose_skills(
+COGWXPOS_API cog_result_t niche_compose_skills(
     niche_engine_t engine,
     niche_skill_t** skills,
     size_t skill_count,
@@ -406,7 +420,7 @@ COGUTIL_API cog_result_t niche_compose_skills(
 /**
  * Compute expected free energy for a technique
  */
-COGUTIL_API cog_result_t niche_compute_free_energy(
+COGWXPOS_API cog_result_t niche_compute_free_energy(
     niche_engine_t engine,
     niche_glyph_t* glyph,
     atom_handle_t goal,
@@ -416,7 +430,7 @@ COGUTIL_API cog_result_t niche_compute_free_energy(
 /**
  * Select action via active inference (minimize expected free energy)
  */
-COGUTIL_API cog_result_t niche_active_inference_select(
+COGWXPOS_API cog_result_t niche_active_inference_select(
     niche_engine_t engine,
     atom_handle_t goal,
     void** candidate_actions,
@@ -431,7 +445,7 @@ COGUTIL_API cog_result_t niche_active_inference_select(
 /**
  * Export glyph as image/diagram
  */
-COGUTIL_API cog_result_t niche_export_glyph(
+COGWXPOS_API cog_result_t niche_export_glyph(
     niche_engine_t engine,
     niche_glyph_t* glyph,
     const char* output_path,
@@ -441,7 +455,7 @@ COGUTIL_API cog_result_t niche_export_glyph(
 /**
  * Visualize skill library
  */
-COGUTIL_API cog_result_t niche_visualize_library(
+COGWXPOS_API cog_result_t niche_visualize_library(
     niche_engine_t engine,
     const char* output_path
 );
@@ -449,7 +463,7 @@ COGUTIL_API cog_result_t niche_visualize_library(
 /**
  * Dump engine statistics
  */
-COGUTIL_API cog_result_t niche_get_stats(
+COGWXPOS_API cog_result_t niche_get_stats(
     niche_engine_t engine,
     char** stats_json,
     size_t* json_size
@@ -462,7 +476,7 @@ COGUTIL_API cog_result_t niche_get_stats(
 /**
  * Save skill library to disk
  */
-COGUTIL_API cog_result_t niche_save_library(
+COGWXPOS_API cog_result_t niche_save_library(
     niche_engine_t engine,
     const char* path
 );
@@ -470,7 +484,7 @@ COGUTIL_API cog_result_t niche_save_library(
 /**
  * Load skill library from disk
  */
-COGUTIL_API cog_result_t niche_load_library(
+COGWXPOS_API cog_result_t niche_load_library(
     niche_engine_t engine,
     const char* path
 );

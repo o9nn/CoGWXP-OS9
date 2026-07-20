@@ -19,6 +19,18 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifndef ATENSPACE_API
+#ifdef COGUTIL_PLATFORM_NT
+    #ifdef ATENSPACE_EXPORTS
+        #define ATENSPACE_API __declspec(dllexport)
+    #else
+        #define ATENSPACE_API __declspec(dllimport)
+    #endif
+#else
+    #define ATENSPACE_API
+#endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -358,19 +370,19 @@ typedef struct cz_agent* cz_agent_t;
  * Lifecycle
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_init(
+ATENSPACE_API cog_result_t cz_init(
     cz_context_t* ctx
 );
 
-COGUTIL_API void cz_shutdown(cz_context_t ctx);
+ATENSPACE_API void cz_shutdown(cz_context_t ctx);
 
-COGUTIL_API cog_result_t cz_create_agent(
+ATENSPACE_API cog_result_t cz_create_agent(
     cz_context_t ctx,
     const cz_config_t* config,
     cz_agent_t* agent
 );
 
-COGUTIL_API void cz_destroy_agent(cz_agent_t agent);
+ATENSPACE_API void cz_destroy_agent(cz_agent_t agent);
 
 /*===========================================================================
  * Cognitive Loop
@@ -379,28 +391,28 @@ COGUTIL_API void cz_destroy_agent(cz_agent_t agent);
 /**
  * Run one cognitive cycle
  */
-COGUTIL_API cog_result_t cz_cycle(cz_agent_t agent);
+ATENSPACE_API cog_result_t cz_cycle(cz_agent_t agent);
 
 /**
  * Run continuous cognitive loop
  */
-COGUTIL_API cog_result_t cz_run(cz_agent_t agent);
+ATENSPACE_API cog_result_t cz_run(cz_agent_t agent);
 
 /**
  * Stop cognitive loop
  */
-COGUTIL_API cog_result_t cz_stop(cz_agent_t agent);
+ATENSPACE_API cog_result_t cz_stop(cz_agent_t agent);
 
 /**
  * Get current state
  */
-COGUTIL_API cz_state_t cz_get_state(cz_agent_t agent);
+ATENSPACE_API cz_state_t cz_get_state(cz_agent_t agent);
 
 /*===========================================================================
  * Perception
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_perceive(
+ATENSPACE_API cog_result_t cz_perceive(
     cz_agent_t agent,
     cz_percept_type_t type,
     const void* data,
@@ -408,12 +420,12 @@ COGUTIL_API cog_result_t cz_perceive(
     const char* source
 );
 
-COGUTIL_API cog_result_t cz_perceive_text(
+ATENSPACE_API cog_result_t cz_perceive_text(
     cz_agent_t agent,
     const char* text
 );
 
-COGUTIL_API cog_result_t cz_get_percepts(
+ATENSPACE_API cog_result_t cz_get_percepts(
     cz_agent_t agent,
     cz_percept_t** percepts,
     size_t* count
@@ -423,30 +435,30 @@ COGUTIL_API cog_result_t cz_get_percepts(
  * Goal & Planning
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_add_goal(
+ATENSPACE_API cog_result_t cz_add_goal(
     cz_agent_t agent,
     const char* description,
     float priority,
     cz_goal_t** goal
 );
 
-COGUTIL_API cog_result_t cz_create_plan(
+ATENSPACE_API cog_result_t cz_create_plan(
     cz_agent_t agent,
     cz_goal_t* goal,
     cz_plan_t** plan
 );
 
-COGUTIL_API cog_result_t cz_execute_plan(
+ATENSPACE_API cog_result_t cz_execute_plan(
     cz_agent_t agent,
     cz_plan_t* plan
 );
 
-COGUTIL_API cog_result_t cz_get_current_goal(
+ATENSPACE_API cog_result_t cz_get_current_goal(
     cz_agent_t agent,
     cz_goal_t** goal
 );
 
-COGUTIL_API cog_result_t cz_get_current_plan(
+ATENSPACE_API cog_result_t cz_get_current_plan(
     cz_agent_t agent,
     cz_plan_t** plan
 );
@@ -455,16 +467,16 @@ COGUTIL_API cog_result_t cz_get_current_plan(
  * Learning
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_learn(
+ATENSPACE_API cog_result_t cz_learn(
     cz_agent_t agent,
     const cz_learning_sample_t* sample
 );
 
-COGUTIL_API cog_result_t cz_learn_from_experience(
+ATENSPACE_API cog_result_t cz_learn_from_experience(
     cz_agent_t agent
 );
 
-COGUTIL_API cog_result_t cz_run_moses(
+ATENSPACE_API cog_result_t cz_run_moses(
     cz_agent_t agent,
     const char* problem_description,
     char** solution
@@ -474,14 +486,14 @@ COGUTIL_API cog_result_t cz_run_moses(
  * Memory
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_remember(
+ATENSPACE_API cog_result_t cz_remember(
     cz_agent_t agent,
     cz_memory_type_t type,
     const char* content,
     float importance
 );
 
-COGUTIL_API cog_result_t cz_recall(
+ATENSPACE_API cog_result_t cz_recall(
     cz_agent_t agent,
     const char* query,
     size_t max_results,
@@ -489,12 +501,12 @@ COGUTIL_API cog_result_t cz_recall(
     size_t* count
 );
 
-COGUTIL_API cog_result_t cz_forget(
+ATENSPACE_API cog_result_t cz_forget(
     cz_agent_t agent,
     uint64_t memory_id
 );
 
-COGUTIL_API cog_result_t cz_consolidate_memories(
+ATENSPACE_API cog_result_t cz_consolidate_memories(
     cz_agent_t agent
 );
 
@@ -502,19 +514,19 @@ COGUTIL_API cog_result_t cz_consolidate_memories(
  * Communication
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_send_message(
+ATENSPACE_API cog_result_t cz_send_message(
     cz_agent_t sender,
     cz_agent_t recipient,
     const char* content
 );
 
-COGUTIL_API cog_result_t cz_receive_messages(
+ATENSPACE_API cog_result_t cz_receive_messages(
     cz_agent_t agent,
     cz_message_t** messages,
     size_t* count
 );
 
-COGUTIL_API cog_result_t cz_generate_response(
+ATENSPACE_API cog_result_t cz_generate_response(
     cz_agent_t agent,
     const char* input,
     char** response
@@ -524,19 +536,19 @@ COGUTIL_API cog_result_t cz_generate_response(
  * Tools
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_register_tool(
+ATENSPACE_API cog_result_t cz_register_tool(
     cz_agent_t agent,
     const cz_tool_t* tool
 );
 
-COGUTIL_API cog_result_t cz_invoke_tool(
+ATENSPACE_API cog_result_t cz_invoke_tool(
     cz_agent_t agent,
     const char* tool_name,
     const char* arguments_json,
     cz_tool_result_t* result
 );
 
-COGUTIL_API cog_result_t cz_list_tools(
+ATENSPACE_API cog_result_t cz_list_tools(
     cz_agent_t agent,
     cz_tool_t** tools,
     size_t* count
@@ -546,26 +558,26 @@ COGUTIL_API cog_result_t cz_list_tools(
  * AtomSpace Integration
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_get_atomspace(
+ATENSPACE_API cog_result_t cz_get_atomspace(
     cz_agent_t agent,
     aten_context_t* atomspace
 );
 
-COGUTIL_API cog_result_t cz_query_atomspace(
+ATENSPACE_API cog_result_t cz_query_atomspace(
     cz_agent_t agent,
     const char* query,
     aten_handle_t** results,
     size_t* count
 );
 
-COGUTIL_API cog_result_t cz_run_pln(
+ATENSPACE_API cog_result_t cz_run_pln(
     cz_agent_t agent,
     const char* query,
     uint32_t max_steps,
     char** conclusion
 );
 
-COGUTIL_API cog_result_t cz_sync_to_atomspace(
+ATENSPACE_API cog_result_t cz_sync_to_atomspace(
     cz_agent_t agent
 );
 
@@ -573,20 +585,20 @@ COGUTIL_API cog_result_t cz_sync_to_atomspace(
  * Distributed
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_discover_agents(
+ATENSPACE_API cog_result_t cz_discover_agents(
     cz_context_t ctx,
     cz_remote_agent_t** agents,
     size_t* count
 );
 
-COGUTIL_API cog_result_t cz_connect_agent(
+ATENSPACE_API cog_result_t cz_connect_agent(
     cz_agent_t local,
     const char* remote_address,
     uint16_t port,
     cz_remote_agent_t** remote
 );
 
-COGUTIL_API cog_result_t cz_delegate_task(
+ATENSPACE_API cog_result_t cz_delegate_task(
     cz_agent_t local,
     cz_remote_agent_t* remote,
     const char* task,
@@ -597,12 +609,12 @@ COGUTIL_API cog_result_t cz_delegate_task(
  * Reflection
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_reflect(
+ATENSPACE_API cog_result_t cz_reflect(
     cz_agent_t agent,
     char** reflection
 );
 
-COGUTIL_API cog_result_t cz_self_improve(
+ATENSPACE_API cog_result_t cz_self_improve(
     cz_agent_t agent,
     const char* feedback
 );
@@ -611,12 +623,12 @@ COGUTIL_API cog_result_t cz_self_improve(
  * Persistence
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_save(
+ATENSPACE_API cog_result_t cz_save(
     cz_agent_t agent,
     const char* path
 );
 
-COGUTIL_API cog_result_t cz_load(
+ATENSPACE_API cog_result_t cz_load(
     cz_context_t ctx,
     const char* path,
     cz_agent_t* agent
@@ -626,12 +638,12 @@ COGUTIL_API cog_result_t cz_load(
  * Statistics
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_get_stats(
+ATENSPACE_API cog_result_t cz_get_stats(
     cz_agent_t agent,
     cz_stats_t* stats
 );
 
-COGUTIL_API void cz_reset_stats(cz_agent_t agent);
+ATENSPACE_API void cz_reset_stats(cz_agent_t agent);
 
 #ifdef __cplusplus
 }

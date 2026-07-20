@@ -190,7 +190,7 @@ static void schedule_next(cogw7_kernel_t kernel);
  * Kernel Lifecycle
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cogw7_kernel_create(
+COGW7OS_API cog_result_t cogw7_kernel_create(
     const cogw7_config_t* config,
     cogw7_kernel_t* kernel
 ) {
@@ -265,7 +265,7 @@ COGUTIL_API cog_result_t cogw7_kernel_create(
     return COG_OK;
 }
 
-COGUTIL_API void cogw7_kernel_destroy(cogw7_kernel_t kernel) {
+COGW7OS_API void cogw7_kernel_destroy(cogw7_kernel_t kernel) {
     if (!kernel) return;
     
     /* Stop kernel if running */
@@ -316,7 +316,7 @@ COGUTIL_API void cogw7_kernel_destroy(cogw7_kernel_t kernel) {
  * Kernel Control
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cogw7_kernel_boot(cogw7_kernel_t kernel) {
+COGW7OS_API cog_result_t cogw7_kernel_boot(cogw7_kernel_t kernel) {
     if (!kernel) return COG_ERROR_INVALID_PARAM;
     
     pthread_mutex_lock(&kernel->state_lock);
@@ -368,7 +368,7 @@ COGUTIL_API cog_result_t cogw7_kernel_boot(cogw7_kernel_t kernel) {
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cogw7_kernel_shutdown(cogw7_kernel_t kernel) {
+COGW7OS_API cog_result_t cogw7_kernel_shutdown(cogw7_kernel_t kernel) {
     if (!kernel) return COG_ERROR_INVALID_PARAM;
     
     pthread_mutex_lock(&kernel->state_lock);
@@ -420,7 +420,7 @@ COGUTIL_API cog_result_t cogw7_kernel_shutdown(cogw7_kernel_t kernel) {
     return COG_OK;
 }
 
-COGUTIL_API cogw7_kernel_state_t cogw7_kernel_get_state(cogw7_kernel_t kernel) {
+COGW7OS_API cogw7_kernel_state_t cogw7_kernel_get_state(cogw7_kernel_t kernel) {
     if (!kernel) return COGW7_STATE_HALTED;
     
     pthread_mutex_lock(&kernel->state_lock);
@@ -434,7 +434,7 @@ COGUTIL_API cogw7_kernel_state_t cogw7_kernel_get_state(cogw7_kernel_t kernel) {
  * Process Management
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cogw7_process_create(
+COGW7OS_API cog_result_t cogw7_process_create(
     cogw7_kernel_t kernel,
     const char* name,
     uint32_t parent_pid,
@@ -502,7 +502,7 @@ COGUTIL_API cog_result_t cogw7_process_create(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cogw7_process_terminate(
+COGW7OS_API cog_result_t cogw7_process_terminate(
     cogw7_kernel_t kernel,
     uint32_t pid,
     int exit_code
@@ -538,7 +538,7 @@ COGUTIL_API cog_result_t cogw7_process_terminate(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cogw7_process_get_info(
+COGW7OS_API cog_result_t cogw7_process_get_info(
     cogw7_kernel_t kernel,
     uint32_t pid,
     cogw7_process_info_t* info
@@ -583,7 +583,7 @@ static void* thread_wrapper(void* arg) {
     return NULL;
 }
 
-COGUTIL_API cog_result_t cogw7_thread_create(
+COGW7OS_API cog_result_t cogw7_thread_create(
     cogw7_kernel_t kernel,
     uint32_t pid,
     void* entry_point,
@@ -802,7 +802,7 @@ static void* reasoning_loop(void* arg) {
  * Service Management
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cogw7_service_start(
+COGW7OS_API cog_result_t cogw7_service_start(
     cogw7_kernel_t kernel,
     cogw7_service_type_t type
 ) {
@@ -876,7 +876,7 @@ COGUTIL_API cog_result_t cogw7_service_start(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cogw7_service_stop(
+COGW7OS_API cog_result_t cogw7_service_stop(
     cogw7_kernel_t kernel,
     cogw7_service_type_t type
 ) {
@@ -901,7 +901,7 @@ COGUTIL_API cog_result_t cogw7_service_stop(
  * Cognitive Agent Management
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cogw7_agent_register(
+COGW7OS_API cog_result_t cogw7_agent_register(
     cogw7_kernel_t kernel,
     atom_handle_t agent_atom
 ) {
@@ -938,7 +938,7 @@ COGUTIL_API cog_result_t cogw7_agent_register(
  * Statistics
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cogw7_get_stats(cogw7_kernel_t kernel, cogw7_stats_t* stats) {
+COGW7OS_API cog_result_t cogw7_get_stats(cogw7_kernel_t kernel, cogw7_stats_t* stats) {
     if (!kernel || !stats) return COG_ERROR_INVALID_PARAM;
     
     pthread_mutex_lock(&kernel->stats_lock);
@@ -949,10 +949,10 @@ COGUTIL_API cog_result_t cogw7_get_stats(cogw7_kernel_t kernel, cogw7_stats_t* s
     return COG_OK;
 }
 
-COGUTIL_API atomspace_t cogw7_get_atomspace(cogw7_kernel_t kernel) {
+COGW7OS_API atomspace_t cogw7_get_atomspace(cogw7_kernel_t kernel) {
     return kernel ? kernel->atomspace : NULL;
 }
 
-COGUTIL_API pln_context_t cogw7_get_pln(cogw7_kernel_t kernel) {
+COGW7OS_API pln_context_t cogw7_get_pln(cogw7_kernel_t kernel) {
     return kernel ? kernel->pln : NULL;
 }

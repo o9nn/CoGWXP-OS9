@@ -134,7 +134,7 @@ static float cz_random_float(void) {
  * Lifecycle
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_init(cz_context_t* ctx) {
+ATENSPACE_API cog_result_t cz_init(cz_context_t* ctx) {
     if (!ctx) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -153,7 +153,7 @@ COGUTIL_API cog_result_t cz_init(cz_context_t* ctx) {
     return COG_OK;
 }
 
-COGUTIL_API void cz_shutdown(cz_context_t ctx) {
+ATENSPACE_API void cz_shutdown(cz_context_t ctx) {
     if (!ctx) return;
 
     /* Destroy all agents (cz_destroy_agent removes itself from the array) */
@@ -164,7 +164,7 @@ COGUTIL_API void cz_shutdown(cz_context_t ctx) {
     free(ctx);
 }
 
-COGUTIL_API cog_result_t cz_create_agent(
+ATENSPACE_API cog_result_t cz_create_agent(
     cz_context_t ctx,
     const cz_config_t* config,
     cz_agent_t* agent
@@ -229,7 +229,7 @@ COGUTIL_API cog_result_t cz_create_agent(
     return COG_OK;
 }
 
-COGUTIL_API void cz_destroy_agent(cz_agent_t agent) {
+ATENSPACE_API void cz_destroy_agent(cz_agent_t agent) {
     if (!agent) return;
 
     /* Stop if running */
@@ -427,7 +427,7 @@ static void cz_process_reflection(cz_agent_t agent) {
     }
 }
 
-COGUTIL_API cog_result_t cz_cycle(cz_agent_t agent) {
+ATENSPACE_API cog_result_t cz_cycle(cz_agent_t agent) {
     if (!agent) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -458,7 +458,7 @@ COGUTIL_API cog_result_t cz_cycle(cz_agent_t agent) {
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_run(cz_agent_t agent) {
+ATENSPACE_API cog_result_t cz_run(cz_agent_t agent) {
     if (!agent) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -479,7 +479,7 @@ COGUTIL_API cog_result_t cz_run(cz_agent_t agent) {
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_stop(cz_agent_t agent) {
+ATENSPACE_API cog_result_t cz_stop(cz_agent_t agent) {
     if (!agent) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -488,7 +488,7 @@ COGUTIL_API cog_result_t cz_stop(cz_agent_t agent) {
     return COG_OK;
 }
 
-COGUTIL_API cz_state_t cz_get_state(cz_agent_t agent) {
+ATENSPACE_API cz_state_t cz_get_state(cz_agent_t agent) {
     if (!agent) return CZ_STATE_ERROR;
     return agent->state;
 }
@@ -497,7 +497,7 @@ COGUTIL_API cz_state_t cz_get_state(cz_agent_t agent) {
  * Perception
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_perceive(
+ATENSPACE_API cog_result_t cz_perceive(
     cz_agent_t agent,
     cz_percept_type_t type,
     const void* data,
@@ -531,7 +531,7 @@ COGUTIL_API cog_result_t cz_perceive(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_perceive_text(cz_agent_t agent, const char* text) {
+ATENSPACE_API cog_result_t cz_perceive_text(cz_agent_t agent, const char* text) {
     if (!agent || !text) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -539,7 +539,7 @@ COGUTIL_API cog_result_t cz_perceive_text(cz_agent_t agent, const char* text) {
     return cz_perceive(agent, CZ_PERCEPT_TEXT, text, strlen(text), "text_input");
 }
 
-COGUTIL_API cog_result_t cz_get_percepts(
+ATENSPACE_API cog_result_t cz_get_percepts(
     cz_agent_t agent,
     cz_percept_t** percepts,
     size_t* count
@@ -558,7 +558,7 @@ COGUTIL_API cog_result_t cz_get_percepts(
  * Goal & Planning
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_add_goal(
+ATENSPACE_API cog_result_t cz_add_goal(
     cz_agent_t agent,
     const char* description,
     float priority,
@@ -597,7 +597,7 @@ COGUTIL_API cog_result_t cz_add_goal(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_create_plan(
+ATENSPACE_API cog_result_t cz_create_plan(
     cz_agent_t agent,
     cz_goal_t* goal,
     cz_plan_t** plan
@@ -653,7 +653,7 @@ COGUTIL_API cog_result_t cz_create_plan(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_execute_plan(cz_agent_t agent, cz_plan_t* plan) {
+ATENSPACE_API cog_result_t cz_execute_plan(cz_agent_t agent, cz_plan_t* plan) {
     if (!agent || !plan) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -682,7 +682,7 @@ COGUTIL_API cog_result_t cz_execute_plan(cz_agent_t agent, cz_plan_t* plan) {
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_get_current_goal(cz_agent_t agent, cz_goal_t** goal) {
+ATENSPACE_API cog_result_t cz_get_current_goal(cz_agent_t agent, cz_goal_t** goal) {
     if (!agent || !goal) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -691,7 +691,7 @@ COGUTIL_API cog_result_t cz_get_current_goal(cz_agent_t agent, cz_goal_t** goal)
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_get_current_plan(cz_agent_t agent, cz_plan_t** plan) {
+ATENSPACE_API cog_result_t cz_get_current_plan(cz_agent_t agent, cz_plan_t** plan) {
     if (!agent || !plan) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -704,7 +704,7 @@ COGUTIL_API cog_result_t cz_get_current_plan(cz_agent_t agent, cz_plan_t** plan)
  * Learning
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_learn(cz_agent_t agent, const cz_learning_sample_t* sample) {
+ATENSPACE_API cog_result_t cz_learn(cz_agent_t agent, const cz_learning_sample_t* sample) {
     if (!agent || !sample) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -723,7 +723,7 @@ COGUTIL_API cog_result_t cz_learn(cz_agent_t agent, const cz_learning_sample_t* 
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_learn_from_experience(cz_agent_t agent) {
+ATENSPACE_API cog_result_t cz_learn_from_experience(cz_agent_t agent) {
     if (!agent) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -748,7 +748,7 @@ COGUTIL_API cog_result_t cz_learn_from_experience(cz_agent_t agent) {
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_run_moses(
+ATENSPACE_API cog_result_t cz_run_moses(
     cz_agent_t agent,
     const char* problem_description,
     char** solution
@@ -773,7 +773,7 @@ COGUTIL_API cog_result_t cz_run_moses(
  * Memory
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_remember(
+ATENSPACE_API cog_result_t cz_remember(
     cz_agent_t agent,
     cz_memory_type_t type,
     const char* content,
@@ -831,7 +831,7 @@ COGUTIL_API cog_result_t cz_remember(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_recall(
+ATENSPACE_API cog_result_t cz_recall(
     cz_agent_t agent,
     const char* query,
     size_t max_results,
@@ -893,7 +893,7 @@ COGUTIL_API cog_result_t cz_recall(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_forget(cz_agent_t agent, uint64_t memory_id) {
+ATENSPACE_API cog_result_t cz_forget(cz_agent_t agent, uint64_t memory_id) {
     if (!agent) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -914,7 +914,7 @@ COGUTIL_API cog_result_t cz_forget(cz_agent_t agent, uint64_t memory_id) {
     return COG_ERROR_NOT_FOUND;
 }
 
-COGUTIL_API cog_result_t cz_consolidate_memories(cz_agent_t agent) {
+ATENSPACE_API cog_result_t cz_consolidate_memories(cz_agent_t agent) {
     if (!agent) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -940,7 +940,7 @@ COGUTIL_API cog_result_t cz_consolidate_memories(cz_agent_t agent) {
  * Communication
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_send_message(
+ATENSPACE_API cog_result_t cz_send_message(
     cz_agent_t sender,
     cz_agent_t recipient,
     const char* content
@@ -968,7 +968,7 @@ COGUTIL_API cog_result_t cz_send_message(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_receive_messages(
+ATENSPACE_API cog_result_t cz_receive_messages(
     cz_agent_t agent,
     cz_message_t** messages,
     size_t* count
@@ -983,7 +983,7 @@ COGUTIL_API cog_result_t cz_receive_messages(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_generate_response(
+ATENSPACE_API cog_result_t cz_generate_response(
     cz_agent_t agent,
     const char* input,
     char** response
@@ -1006,7 +1006,7 @@ COGUTIL_API cog_result_t cz_generate_response(
  * Tools
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_register_tool(cz_agent_t agent, const cz_tool_t* tool) {
+ATENSPACE_API cog_result_t cz_register_tool(cz_agent_t agent, const cz_tool_t* tool) {
     if (!agent || !tool) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -1020,7 +1020,7 @@ COGUTIL_API cog_result_t cz_register_tool(cz_agent_t agent, const cz_tool_t* too
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_invoke_tool(
+ATENSPACE_API cog_result_t cz_invoke_tool(
     cz_agent_t agent,
     const char* tool_name,
     const char* arguments_json,
@@ -1055,7 +1055,7 @@ COGUTIL_API cog_result_t cz_invoke_tool(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_list_tools(
+ATENSPACE_API cog_result_t cz_list_tools(
     cz_agent_t agent,
     cz_tool_t** tools,
     size_t* count
@@ -1074,7 +1074,7 @@ COGUTIL_API cog_result_t cz_list_tools(
  * AtomSpace Integration
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_get_atomspace(
+ATENSPACE_API cog_result_t cz_get_atomspace(
     cz_agent_t agent,
     aten_context_t* atomspace
 ) {
@@ -1086,7 +1086,7 @@ COGUTIL_API cog_result_t cz_get_atomspace(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_query_atomspace(
+ATENSPACE_API cog_result_t cz_query_atomspace(
     cz_agent_t agent,
     const char* query,
     aten_handle_t** results,
@@ -1141,7 +1141,7 @@ COGUTIL_API cog_result_t cz_query_atomspace(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_run_pln(
+ATENSPACE_API cog_result_t cz_run_pln(
     cz_agent_t agent,
     const char* query,
     uint32_t max_steps,
@@ -1169,7 +1169,7 @@ COGUTIL_API cog_result_t cz_run_pln(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_sync_to_atomspace(cz_agent_t agent) {
+ATENSPACE_API cog_result_t cz_sync_to_atomspace(cz_agent_t agent) {
     if (!agent) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -1196,7 +1196,7 @@ COGUTIL_API cog_result_t cz_sync_to_atomspace(cz_agent_t agent) {
  * Distributed
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_discover_agents(
+ATENSPACE_API cog_result_t cz_discover_agents(
     cz_context_t ctx,
     cz_remote_agent_t** agents,
     size_t* count
@@ -1212,7 +1212,7 @@ COGUTIL_API cog_result_t cz_discover_agents(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_connect_agent(
+ATENSPACE_API cog_result_t cz_connect_agent(
     cz_agent_t local,
     const char* remote_address,
     uint16_t port,
@@ -1237,7 +1237,7 @@ COGUTIL_API cog_result_t cz_connect_agent(
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_delegate_task(
+ATENSPACE_API cog_result_t cz_delegate_task(
     cz_agent_t local,
     cz_remote_agent_t* remote,
     const char* task,
@@ -1276,7 +1276,7 @@ COGUTIL_API cog_result_t cz_delegate_task(
  * Reflection
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_reflect(cz_agent_t agent, char** reflection) {
+ATENSPACE_API cog_result_t cz_reflect(cz_agent_t agent, char** reflection) {
     if (!agent || !reflection) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -1309,7 +1309,7 @@ COGUTIL_API cog_result_t cz_reflect(cz_agent_t agent, char** reflection) {
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_self_improve(cz_agent_t agent, const char* feedback) {
+ATENSPACE_API cog_result_t cz_self_improve(cz_agent_t agent, const char* feedback) {
     if (!agent || !feedback) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -1335,7 +1335,7 @@ COGUTIL_API cog_result_t cz_self_improve(cz_agent_t agent, const char* feedback)
  * Persistence
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_save(cz_agent_t agent, const char* path) {
+ATENSPACE_API cog_result_t cz_save(cz_agent_t agent, const char* path) {
     if (!agent || !path) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -1377,7 +1377,7 @@ COGUTIL_API cog_result_t cz_save(cz_agent_t agent, const char* path) {
     return COG_OK;
 }
 
-COGUTIL_API cog_result_t cz_load(
+ATENSPACE_API cog_result_t cz_load(
     cz_context_t ctx,
     const char* path,
     cz_agent_t* agent
@@ -1459,7 +1459,7 @@ COGUTIL_API cog_result_t cz_load(
  * Statistics
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cz_get_stats(cz_agent_t agent, cz_stats_t* stats) {
+ATENSPACE_API cog_result_t cz_get_stats(cz_agent_t agent, cz_stats_t* stats) {
     if (!agent || !stats) {
         return COG_ERROR_INVALID_ARGUMENT;
     }
@@ -1468,7 +1468,7 @@ COGUTIL_API cog_result_t cz_get_stats(cz_agent_t agent, cz_stats_t* stats) {
     return COG_OK;
 }
 
-COGUTIL_API void cz_reset_stats(cz_agent_t agent) {
+ATENSPACE_API void cz_reset_stats(cz_agent_t agent) {
     if (!agent) return;
     memset(&agent->stats, 0, sizeof(cz_stats_t));
 }

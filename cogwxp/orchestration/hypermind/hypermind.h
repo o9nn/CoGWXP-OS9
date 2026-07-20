@@ -17,6 +17,18 @@
 #include <stdint.h>
 #include <stdbool.h>
 
+#ifndef ATENSPACE_API
+#ifdef COGUTIL_PLATFORM_NT
+    #ifdef ATENSPACE_EXPORTS
+        #define ATENSPACE_API __declspec(dllexport)
+    #else
+        #define ATENSPACE_API __declspec(dllimport)
+    #endif
+#else
+    #define ATENSPACE_API
+#endif
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -329,18 +341,18 @@ typedef struct hm_context* hm_context_t;
  * Lifecycle
  *===========================================================================*/
 
-COGUTIL_API cog_result_t hm_init(
+ATENSPACE_API cog_result_t hm_init(
     const hm_config_t* config,
     hm_context_t* ctx
 );
 
-COGUTIL_API void hm_shutdown(hm_context_t ctx);
+ATENSPACE_API void hm_shutdown(hm_context_t ctx);
 
 /*===========================================================================
  * Actor Operations
  *===========================================================================*/
 
-COGUTIL_API cog_result_t hm_create_actor(
+ATENSPACE_API cog_result_t hm_create_actor(
     hm_context_t ctx,
     hm_actor_type_t type,
     const char* name,
@@ -349,17 +361,17 @@ COGUTIL_API cog_result_t hm_create_actor(
     hm_actor_id_t* actor_id
 );
 
-COGUTIL_API cog_result_t hm_destroy_actor(
+ATENSPACE_API cog_result_t hm_destroy_actor(
     hm_context_t ctx,
     hm_actor_id_t actor_id
 );
 
-COGUTIL_API cog_result_t hm_send_message(
+ATENSPACE_API cog_result_t hm_send_message(
     hm_context_t ctx,
     const hm_message_t* message
 );
 
-COGUTIL_API cog_result_t hm_broadcast_message(
+ATENSPACE_API cog_result_t hm_broadcast_message(
     hm_context_t ctx,
     hm_actor_type_t target_type,
     const hm_message_t* message
@@ -369,7 +381,7 @@ COGUTIL_API cog_result_t hm_broadcast_message(
  * Reactive Streams
  *===========================================================================*/
 
-COGUTIL_API cog_result_t hm_create_stream(
+ATENSPACE_API cog_result_t hm_create_stream(
     hm_context_t ctx,
     hm_stream_type_t type,
     hm_stream_callback_t callback,
@@ -377,14 +389,14 @@ COGUTIL_API cog_result_t hm_create_stream(
     hm_stream_id_t* stream_id
 );
 
-COGUTIL_API cog_result_t hm_stream_push(
+ATENSPACE_API cog_result_t hm_stream_push(
     hm_context_t ctx,
     hm_stream_id_t stream_id,
     const void* data,
     size_t size
 );
 
-COGUTIL_API cog_result_t hm_stream_close(
+ATENSPACE_API cog_result_t hm_stream_close(
     hm_context_t ctx,
     hm_stream_id_t stream_id
 );
@@ -393,23 +405,23 @@ COGUTIL_API cog_result_t hm_stream_close(
  * Session Management
  *===========================================================================*/
 
-COGUTIL_API cog_result_t hm_create_session(
+ATENSPACE_API cog_result_t hm_create_session(
     hm_context_t ctx,
     const hm_session_config_t* config,
     hm_session_t* session
 );
 
-COGUTIL_API cog_result_t hm_start_session(hm_session_t session);
+ATENSPACE_API cog_result_t hm_start_session(hm_session_t session);
 
-COGUTIL_API cog_result_t hm_stop_session(hm_session_t session);
+ATENSPACE_API cog_result_t hm_stop_session(hm_session_t session);
 
-COGUTIL_API void hm_destroy_session(hm_session_t session);
+ATENSPACE_API void hm_destroy_session(hm_session_t session);
 
 /*===========================================================================
  * Command Execution
  *===========================================================================*/
 
-COGUTIL_API cog_result_t hm_submit_command(
+ATENSPACE_API cog_result_t hm_submit_command(
     hm_session_t session,
     hm_command_type_t type,
     const void* input,
@@ -419,14 +431,14 @@ COGUTIL_API cog_result_t hm_submit_command(
     hm_command_id_t* cmd_id
 );
 
-COGUTIL_API cog_result_t hm_wait_command(
+ATENSPACE_API cog_result_t hm_wait_command(
     hm_session_t session,
     hm_command_id_t cmd_id,
     uint32_t timeout_ms,
     hm_command_t* result
 );
 
-COGUTIL_API cog_result_t hm_cancel_command(
+ATENSPACE_API cog_result_t hm_cancel_command(
     hm_session_t session,
     hm_command_id_t cmd_id
 );
@@ -435,52 +447,52 @@ COGUTIL_API cog_result_t hm_cancel_command(
  * Model Operations
  *===========================================================================*/
 
-COGUTIL_API cog_result_t hm_create_model(
+ATENSPACE_API cog_result_t hm_create_model(
     hm_context_t ctx,
     const hm_model_config_t* config,
     hm_model_t* model
 );
 
-COGUTIL_API cog_result_t hm_model_forward(
+ATENSPACE_API cog_result_t hm_model_forward(
     hm_model_t model,
     const hm_tensor_t* input,
     hm_tensor_t** output
 );
 
-COGUTIL_API cog_result_t hm_model_backward(
+ATENSPACE_API cog_result_t hm_model_backward(
     hm_model_t model,
     const hm_tensor_t* grad_output
 );
 
-COGUTIL_API cog_result_t hm_model_update(
+ATENSPACE_API cog_result_t hm_model_update(
     hm_model_t model
 );
 
-COGUTIL_API cog_result_t hm_model_train_batch(
+ATENSPACE_API cog_result_t hm_model_train_batch(
     hm_model_t model,
     const hm_tensor_t* input,
     const hm_tensor_t* target,
     float* loss
 );
 
-COGUTIL_API cog_result_t hm_model_save(
+ATENSPACE_API cog_result_t hm_model_save(
     hm_model_t model,
     const char* path
 );
 
-COGUTIL_API cog_result_t hm_model_load(
+ATENSPACE_API cog_result_t hm_model_load(
     hm_context_t ctx,
     const char* path,
     hm_model_t* model
 );
 
-COGUTIL_API void hm_destroy_model(hm_model_t model);
+ATENSPACE_API void hm_destroy_model(hm_model_t model);
 
 /*===========================================================================
  * Tensor Operations
  *===========================================================================*/
 
-COGUTIL_API cog_result_t hm_tensor_create(
+ATENSPACE_API cog_result_t hm_tensor_create(
     hm_context_t ctx,
     const size_t* shape,
     size_t ndim,
@@ -489,7 +501,7 @@ COGUTIL_API cog_result_t hm_tensor_create(
     hm_tensor_t** tensor
 );
 
-COGUTIL_API cog_result_t hm_tensor_from_data(
+ATENSPACE_API cog_result_t hm_tensor_from_data(
     hm_context_t ctx,
     const void* data,
     const size_t* shape,
@@ -498,45 +510,45 @@ COGUTIL_API cog_result_t hm_tensor_from_data(
     hm_tensor_t** tensor
 );
 
-COGUTIL_API cog_result_t hm_tensor_to_device(
+ATENSPACE_API cog_result_t hm_tensor_to_device(
     hm_tensor_t* tensor,
     int device_id
 );
 
-COGUTIL_API cog_result_t hm_tensor_matmul(
+ATENSPACE_API cog_result_t hm_tensor_matmul(
     hm_context_t ctx,
     const hm_tensor_t* a,
     const hm_tensor_t* b,
     hm_tensor_t** result
 );
 
-COGUTIL_API cog_result_t hm_tensor_add(
+ATENSPACE_API cog_result_t hm_tensor_add(
     hm_context_t ctx,
     const hm_tensor_t* a,
     const hm_tensor_t* b,
     hm_tensor_t** result
 );
 
-COGUTIL_API void hm_tensor_free(hm_tensor_t* tensor);
+ATENSPACE_API void hm_tensor_free(hm_tensor_t* tensor);
 
 /*===========================================================================
  * Distributed Operations
  *===========================================================================*/
 
-COGUTIL_API cog_result_t hm_cluster_join(
+ATENSPACE_API cog_result_t hm_cluster_join(
     hm_context_t ctx,
     const char* cluster_address,
     uint16_t port
 );
 
-COGUTIL_API cog_result_t hm_cluster_leave(hm_context_t ctx);
+ATENSPACE_API cog_result_t hm_cluster_leave(hm_context_t ctx);
 
-COGUTIL_API cog_result_t hm_distributed_all_reduce(
+ATENSPACE_API cog_result_t hm_distributed_all_reduce(
     hm_context_t ctx,
     hm_tensor_t* tensor
 );
 
-COGUTIL_API cog_result_t hm_distributed_broadcast(
+ATENSPACE_API cog_result_t hm_distributed_broadcast(
     hm_context_t ctx,
     hm_tensor_t* tensor,
     int root_rank
@@ -546,12 +558,12 @@ COGUTIL_API cog_result_t hm_distributed_broadcast(
  * Statistics
  *===========================================================================*/
 
-COGUTIL_API cog_result_t hm_get_stats(
+ATENSPACE_API cog_result_t hm_get_stats(
     hm_context_t ctx,
     hm_stats_t* stats
 );
 
-COGUTIL_API void hm_reset_stats(hm_context_t ctx);
+ATENSPACE_API void hm_reset_stats(hm_context_t ctx);
 
 #ifdef __cplusplus
 }

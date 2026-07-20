@@ -300,6 +300,10 @@ elseif(PLN_LIB)
     target_link_libraries(atenspace PUBLIC pln)
 endif()
 
+if(WIN32)
+    target_compile_definitions(atenspace PRIVATE ATENSPACE_EXPORTS)
+endif()
+
 set_target_properties(atenspace PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1

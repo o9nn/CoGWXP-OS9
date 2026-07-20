@@ -196,7 +196,7 @@ static void unlink_and_free(atomspace_t as, atom_t* atom) {
  * Lifecycle
  *===========================================================================*/
 
-COGUTIL_API atomspace_t atomspace_create(void) {
+ATOMSPACE_API atomspace_t atomspace_create(void) {
     struct atomspace* as = calloc(1, sizeof(struct atomspace));
     if (!as) return NULL;
     as->next_handle = 1;
@@ -206,24 +206,24 @@ COGUTIL_API atomspace_t atomspace_create(void) {
     return as;
 }
 
-COGUTIL_API void atomspace_destroy(atomspace_t as) {
+ATOMSPACE_API void atomspace_destroy(atomspace_t as) {
     if (!as) return;
     atomspace_clear(as);
     pthread_rwlock_destroy(&as->lock);
     free(as);
 }
 
-COGUTIL_API atomspace_t atomspace_create_child(atomspace_t parent) {
+ATOMSPACE_API atomspace_t atomspace_create_child(atomspace_t parent) {
     atomspace_t child = atomspace_create();
     if (child) child->parent = parent;
     return child;
 }
 
-COGUTIL_API atomspace_t atomspace_get_parent(atomspace_t as) {
+ATOMSPACE_API atomspace_t atomspace_get_parent(atomspace_t as) {
     return as ? as->parent : NULL;
 }
 
-COGUTIL_API void atomspace_clear(atomspace_t as) {
+ATOMSPACE_API void atomspace_clear(atomspace_t as) {
     if (!as) return;
     pthread_rwlock_wrlock(&as->lock);
     for (size_t b = 0; b < ATOM_BUCKET_COUNT; b++) {
@@ -244,7 +244,7 @@ COGUTIL_API void atomspace_clear(atomspace_t as) {
  * Atom Creation and Retrieval
  *===========================================================================*/
 
-COGUTIL_API atom_handle_t atomspace_add_node(
+ATOMSPACE_API atom_handle_t atomspace_add_node(
     atomspace_t as,
     atom_type_t type,
     const char* name
@@ -253,7 +253,7 @@ COGUTIL_API atom_handle_t atomspace_add_node(
     return atomspace_add_node_tv(as, type, name, tv);
 }
 
-COGUTIL_API atom_handle_t atomspace_add_node_tv(
+ATOMSPACE_API atom_handle_t atomspace_add_node_tv(
     atomspace_t as,
     atom_type_t type,
     const char* name,
@@ -287,7 +287,7 @@ COGUTIL_API atom_handle_t atomspace_add_node_tv(
     return handle;
 }
 
-COGUTIL_API atom_handle_t atomspace_add_link(
+ATOMSPACE_API atom_handle_t atomspace_add_link(
     atomspace_t as,
     atom_type_t type,
     const atom_handle_t* outgoing,
@@ -297,7 +297,7 @@ COGUTIL_API atom_handle_t atomspace_add_link(
     return atomspace_add_link_tv(as, type, outgoing, outgoing_count, tv);
 }
 
-COGUTIL_API atom_handle_t atomspace_add_link_tv(
+ATOMSPACE_API atom_handle_t atomspace_add_link_tv(
     atomspace_t as,
     atom_type_t type,
     const atom_handle_t* outgoing,
@@ -357,7 +357,7 @@ static bool node_lookup_visit(atom_t* atom, void* user) {
     return true;
 }
 
-COGUTIL_API atom_handle_t atomspace_get_node(
+ATOMSPACE_API atom_handle_t atomspace_get_node(
     atomspace_t as,
     atom_type_t type,
     const char* name
@@ -391,7 +391,7 @@ static bool link_lookup_visit(atom_t* atom, void* user) {
     return true;
 }
 
-COGUTIL_API atom_handle_t atomspace_get_link(
+ATOMSPACE_API atom_handle_t atomspace_get_link(
     atomspace_t as,
     atom_type_t type,
     const atom_handle_t* outgoing,
@@ -406,7 +406,7 @@ COGUTIL_API atom_handle_t atomspace_get_link(
     return q.result;
 }
 
-COGUTIL_API const atom_t* atomspace_get_atom(atomspace_t as, atom_handle_t handle) {
+ATOMSPACE_API const atom_t* atomspace_get_atom(atomspace_t as, atom_handle_t handle) {
     if (!as) return NULL;
     pthread_rwlock_rdlock(&as->lock);
     const atom_t* atom = find_atom(as, handle);
@@ -414,7 +414,7 @@ COGUTIL_API const atom_t* atomspace_get_atom(atomspace_t as, atom_handle_t handl
     return atom;
 }
 
-COGUTIL_API bool atomspace_remove_atom(atomspace_t as, atom_handle_t handle) {
+ATOMSPACE_API bool atomspace_remove_atom(atomspace_t as, atom_handle_t handle) {
     if (!as) return false;
     pthread_rwlock_wrlock(&as->lock);
     atom_t* atom = find_atom(as, handle);
@@ -442,7 +442,7 @@ static void remove_recursive_locked(atomspace_t as, atom_handle_t handle) {
     unlink_and_free(as, atom);
 }
 
-COGUTIL_API bool atomspace_remove_atom_recursive(atomspace_t as, atom_handle_t handle) {
+ATOMSPACE_API bool atomspace_remove_atom_recursive(atomspace_t as, atom_handle_t handle) {
     if (!as) return false;
     pthread_rwlock_wrlock(&as->lock);
     atom_t* atom = find_atom(as, handle);
@@ -459,7 +459,7 @@ COGUTIL_API bool atomspace_remove_atom_recursive(atomspace_t as, atom_handle_t h
  * Truth Values
  *===========================================================================*/
 
-COGUTIL_API truth_value_t atomspace_get_tv(atomspace_t as, atom_handle_t handle) {
+ATOMSPACE_API truth_value_t atomspace_get_tv(atomspace_t as, atom_handle_t handle) {
     truth_value_t tv = TRUTH_VALUE_DEFAULT;
     if (!as) return tv;
     pthread_rwlock_rdlock(&as->lock);
@@ -469,7 +469,7 @@ COGUTIL_API truth_value_t atomspace_get_tv(atomspace_t as, atom_handle_t handle)
     return tv;
 }
 
-COGUTIL_API void atomspace_set_tv(atomspace_t as, atom_handle_t handle, truth_value_t tv) {
+ATOMSPACE_API void atomspace_set_tv(atomspace_t as, atom_handle_t handle, truth_value_t tv) {
     if (!as) return;
     pthread_rwlock_wrlock(&as->lock);
     atom_t* atom = find_atom(as, handle);
@@ -477,7 +477,7 @@ COGUTIL_API void atomspace_set_tv(atomspace_t as, atom_handle_t handle, truth_va
     pthread_rwlock_unlock(&as->lock);
 }
 
-COGUTIL_API truth_value_t tv_simple(double strength, double confidence) {
+ATOMSPACE_API truth_value_t tv_simple(double strength, double confidence) {
     truth_value_t tv;
     tv.type = TRUTH_VALUE_SIMPLE;
     tv.strength = strength;
@@ -486,7 +486,7 @@ COGUTIL_API truth_value_t tv_simple(double strength, double confidence) {
     return tv;
 }
 
-COGUTIL_API truth_value_t tv_count(double strength, double confidence, uint64_t count) {
+ATOMSPACE_API truth_value_t tv_count(double strength, double confidence, uint64_t count) {
     truth_value_t tv;
     tv.type = TRUTH_VALUE_COUNT;
     tv.strength = strength;
@@ -495,7 +495,7 @@ COGUTIL_API truth_value_t tv_count(double strength, double confidence, uint64_t 
     return tv;
 }
 
-COGUTIL_API truth_value_t tv_merge(const truth_value_t* a, const truth_value_t* b) {
+ATOMSPACE_API truth_value_t tv_merge(const truth_value_t* a, const truth_value_t* b) {
     truth_value_t tv = TRUTH_VALUE_DEFAULT;
     if (!a && !b) return tv;
     if (!a) return *b;
@@ -517,7 +517,7 @@ COGUTIL_API truth_value_t tv_merge(const truth_value_t* a, const truth_value_t* 
     return tv;
 }
 
-COGUTIL_API void atomspace_merge_tv(atomspace_t as, atom_handle_t handle, truth_value_t tv) {
+ATOMSPACE_API void atomspace_merge_tv(atomspace_t as, atom_handle_t handle, truth_value_t tv) {
     if (!as) return;
     pthread_rwlock_wrlock(&as->lock);
     atom_t* atom = find_atom(as, handle);
@@ -529,7 +529,7 @@ COGUTIL_API void atomspace_merge_tv(atomspace_t as, atom_handle_t handle, truth_
  * Attention Values
  *===========================================================================*/
 
-COGUTIL_API attention_value_t atomspace_get_av(atomspace_t as, atom_handle_t handle) {
+ATOMSPACE_API attention_value_t atomspace_get_av(atomspace_t as, atom_handle_t handle) {
     attention_value_t av = ATTENTION_VALUE_DEFAULT;
     if (!as) return av;
     pthread_rwlock_rdlock(&as->lock);
@@ -539,7 +539,7 @@ COGUTIL_API attention_value_t atomspace_get_av(atomspace_t as, atom_handle_t han
     return av;
 }
 
-COGUTIL_API void atomspace_set_av(atomspace_t as, atom_handle_t handle, attention_value_t av) {
+ATOMSPACE_API void atomspace_set_av(atomspace_t as, atom_handle_t handle, attention_value_t av) {
     if (!as) return;
     pthread_rwlock_wrlock(&as->lock);
     atom_t* atom = find_atom(as, handle);
@@ -553,7 +553,7 @@ static int16_t sti_clamp(int32_t value) {
     return (int16_t)value;
 }
 
-COGUTIL_API void atomspace_stimulate(atomspace_t as, atom_handle_t handle, int16_t stimulus) {
+ATOMSPACE_API void atomspace_stimulate(atomspace_t as, atom_handle_t handle, int16_t stimulus) {
     if (!as) return;
     pthread_rwlock_wrlock(&as->lock);
     atom_t* atom = find_atom(as, handle);
@@ -568,7 +568,7 @@ COGUTIL_API void atomspace_stimulate(atomspace_t as, atom_handle_t handle, int16
  * Type and Name
  *===========================================================================*/
 
-COGUTIL_API atom_type_t atomspace_get_type(atomspace_t as, atom_handle_t handle) {
+ATOMSPACE_API atom_type_t atomspace_get_type(atomspace_t as, atom_handle_t handle) {
     atom_type_t type = ATOM_TYPE_MAX;
     if (!as) return type;
     pthread_rwlock_rdlock(&as->lock);
@@ -578,7 +578,7 @@ COGUTIL_API atom_type_t atomspace_get_type(atomspace_t as, atom_handle_t handle)
     return type;
 }
 
-COGUTIL_API const char* atomspace_get_name(atomspace_t as, atom_handle_t handle) {
+ATOMSPACE_API const char* atomspace_get_name(atomspace_t as, atom_handle_t handle) {
     const char* name = NULL;
     if (!as) return NULL;
     pthread_rwlock_rdlock(&as->lock);
@@ -588,7 +588,7 @@ COGUTIL_API const char* atomspace_get_name(atomspace_t as, atom_handle_t handle)
     return name;
 }
 
-COGUTIL_API bool atomspace_is_node(atomspace_t as, atom_handle_t handle) {
+ATOMSPACE_API bool atomspace_is_node(atomspace_t as, atom_handle_t handle) {
     if (!as) return false;
     pthread_rwlock_rdlock(&as->lock);
     atom_t* atom = find_atom(as, handle);
@@ -597,7 +597,7 @@ COGUTIL_API bool atomspace_is_node(atomspace_t as, atom_handle_t handle) {
     return result;
 }
 
-COGUTIL_API bool atomspace_is_link(atomspace_t as, atom_handle_t handle) {
+ATOMSPACE_API bool atomspace_is_link(atomspace_t as, atom_handle_t handle) {
     if (!as) return false;
     pthread_rwlock_rdlock(&as->lock);
     atom_t* atom = find_atom(as, handle);
@@ -611,7 +611,7 @@ COGUTIL_API bool atomspace_is_link(atomspace_t as, atom_handle_t handle) {
  * Outgoing / Incoming Sets
  *===========================================================================*/
 
-COGUTIL_API size_t atomspace_get_arity(atomspace_t as, atom_handle_t handle) {
+ATOMSPACE_API size_t atomspace_get_arity(atomspace_t as, atom_handle_t handle) {
     size_t arity = 0;
     if (!as) return 0;
     pthread_rwlock_rdlock(&as->lock);
@@ -621,7 +621,7 @@ COGUTIL_API size_t atomspace_get_arity(atomspace_t as, atom_handle_t handle) {
     return arity;
 }
 
-COGUTIL_API const atom_handle_t* atomspace_get_outgoing(atomspace_t as, atom_handle_t handle) {
+ATOMSPACE_API const atom_handle_t* atomspace_get_outgoing(atomspace_t as, atom_handle_t handle) {
     const atom_handle_t* outgoing = NULL;
     if (!as) return NULL;
     pthread_rwlock_rdlock(&as->lock);
@@ -631,7 +631,7 @@ COGUTIL_API const atom_handle_t* atomspace_get_outgoing(atomspace_t as, atom_han
     return outgoing;
 }
 
-COGUTIL_API atom_handle_t atomspace_get_outgoing_at(atomspace_t as, atom_handle_t handle, size_t index) {
+ATOMSPACE_API atom_handle_t atomspace_get_outgoing_at(atomspace_t as, atom_handle_t handle, size_t index) {
     atom_handle_t result = ATOM_HANDLE_INVALID;
     if (!as) return result;
     pthread_rwlock_rdlock(&as->lock);
@@ -641,7 +641,7 @@ COGUTIL_API atom_handle_t atomspace_get_outgoing_at(atomspace_t as, atom_handle_
     return result;
 }
 
-COGUTIL_API size_t atomspace_get_incoming_size(atomspace_t as, atom_handle_t handle) {
+ATOMSPACE_API size_t atomspace_get_incoming_size(atomspace_t as, atom_handle_t handle) {
     size_t count = 0;
     if (!as) return 0;
     pthread_rwlock_rdlock(&as->lock);
@@ -651,7 +651,7 @@ COGUTIL_API size_t atomspace_get_incoming_size(atomspace_t as, atom_handle_t han
     return count;
 }
 
-COGUTIL_API atom_handle_t* atomspace_get_incoming(atomspace_t as, atom_handle_t handle, size_t* count) {
+ATOMSPACE_API atom_handle_t* atomspace_get_incoming(atomspace_t as, atom_handle_t handle, size_t* count) {
     if (count) *count = 0;
     if (!as || !count) return NULL;
     pthread_rwlock_rdlock(&as->lock);
@@ -673,39 +673,39 @@ COGUTIL_API atom_handle_t* atomspace_get_incoming(atomspace_t as, atom_handle_t 
  * Query
  *===========================================================================*/
 
-COGUTIL_API atom_query_t atomspace_query_create(atomspace_t as) {
+ATOMSPACE_API atom_query_t atomspace_query_create(atomspace_t as) {
     if (!as) return NULL;
     struct atom_query* q = calloc(1, sizeof(struct atom_query));
     if (q) q->as = as;
     return q;
 }
 
-COGUTIL_API void atomspace_query_destroy(atom_query_t query) {
+ATOMSPACE_API void atomspace_query_destroy(atom_query_t query) {
     if (!query) return;
     free(query->name_pattern);
     free(query);
 }
 
-COGUTIL_API void atomspace_query_type(atom_query_t query, atom_type_t type) {
+ATOMSPACE_API void atomspace_query_type(atom_query_t query, atom_type_t type) {
     if (!query) return;
     query->filter_type = true;
     query->type = type;
 }
 
-COGUTIL_API void atomspace_query_name(atom_query_t query, const char* pattern) {
+ATOMSPACE_API void atomspace_query_name(atom_query_t query, const char* pattern) {
     if (!query) return;
     free(query->name_pattern);
     query->name_pattern = pattern ? strdup(pattern) : NULL;
 }
 
-COGUTIL_API void atomspace_query_tv_min(atom_query_t query, double min_strength, double min_confidence) {
+ATOMSPACE_API void atomspace_query_tv_min(atom_query_t query, double min_strength, double min_confidence) {
     if (!query) return;
     query->filter_tv = true;
     query->min_strength = min_strength;
     query->min_confidence = min_confidence;
 }
 
-COGUTIL_API void atomspace_query_av_min(atom_query_t query, int16_t min_sti) {
+ATOMSPACE_API void atomspace_query_av_min(atom_query_t query, int16_t min_sti) {
     if (!query) return;
     query->filter_av = true;
     query->min_sti = min_sti;
@@ -747,7 +747,7 @@ static bool query_exec_visit(atom_t* atom, void* user) {
     return true;
 }
 
-COGUTIL_API atom_handle_t* atomspace_query_execute(atom_query_t query, size_t* count) {
+ATOMSPACE_API atom_handle_t* atomspace_query_execute(atom_query_t query, size_t* count) {
     if (count) *count = 0;
     if (!query || !query->as || !count) return NULL;
     query_exec_t ctx = { query, NULL, 0, 0 };
@@ -758,11 +758,11 @@ COGUTIL_API atom_handle_t* atomspace_query_execute(atom_query_t query, size_t* c
     return ctx.results;
 }
 
-COGUTIL_API void atomspace_query_results_free(atom_handle_t* results) {
+ATOMSPACE_API void atomspace_query_results_free(atom_handle_t* results) {
     free(results);
 }
 
-COGUTIL_API cog_result_t atomspace_get_atoms_by_type(
+ATOMSPACE_API cog_result_t atomspace_get_atoms_by_type(
     atomspace_t as,
     atom_type_t type,
     bool include_subtypes,
@@ -783,7 +783,7 @@ COGUTIL_API cog_result_t atomspace_get_atoms_by_type(
  * Pattern Matching
  *===========================================================================*/
 
-COGUTIL_API atom_handle_t* atomspace_pattern_match(
+ATOMSPACE_API atom_handle_t* atomspace_pattern_match(
     atomspace_t as,
     atom_handle_t pattern,
     size_t* count
@@ -810,16 +810,16 @@ COGUTIL_API atom_handle_t* atomspace_pattern_match(
  * Attention Bank
  *===========================================================================*/
 
-COGUTIL_API attention_bank_t atomspace_get_attention_bank(atomspace_t as) {
+ATOMSPACE_API attention_bank_t atomspace_get_attention_bank(atomspace_t as) {
     return as ? &as->bank : NULL;
 }
 
-COGUTIL_API void attention_bank_update_sti(attention_bank_t bank, atom_handle_t handle, int16_t delta) {
+ATOMSPACE_API void attention_bank_update_sti(attention_bank_t bank, atom_handle_t handle, int16_t delta) {
     if (!bank || !bank->as) return;
     atomspace_stimulate(bank->as, handle, delta);
 }
 
-COGUTIL_API void attention_bank_update_lti(attention_bank_t bank, atom_handle_t handle, int16_t delta) {
+ATOMSPACE_API void attention_bank_update_lti(attention_bank_t bank, atom_handle_t handle, int16_t delta) {
     if (!bank || !bank->as) return;
     atomspace_t as = bank->as;
     pthread_rwlock_wrlock(&as->lock);
@@ -856,7 +856,7 @@ static bool top_sti_visit(atom_t* atom, void* user) {
     return true;
 }
 
-COGUTIL_API atom_handle_t* attention_bank_get_top_sti(attention_bank_t bank, size_t count, size_t* actual_count) {
+ATOMSPACE_API atom_handle_t* attention_bank_get_top_sti(attention_bank_t bank, size_t count, size_t* actual_count) {
     if (actual_count) *actual_count = 0;
     if (!bank || !bank->as || !actual_count || count == 0) return NULL;
 
@@ -895,7 +895,7 @@ COGUTIL_API atom_handle_t* attention_bank_get_top_sti(attention_bank_t bank, siz
     return result;
 }
 
-COGUTIL_API int16_t attention_bank_get_attentional_focus_boundary(attention_bank_t bank) {
+ATOMSPACE_API int16_t attention_bank_get_attentional_focus_boundary(attention_bank_t bank) {
     return bank ? bank->afb_threshold : 0;
 }
 
@@ -903,7 +903,7 @@ COGUTIL_API int16_t attention_bank_get_attentional_focus_boundary(attention_bank
  * Activation Spreading
  *===========================================================================*/
 
-COGUTIL_API void atomspace_spread_activation(
+ATOMSPACE_API void atomspace_spread_activation(
     atomspace_t as,
     atom_handle_t source,
     spreading_config_t* config
@@ -979,7 +979,7 @@ static bool stats_visit(atom_t* atom, void* user) {
     return true;
 }
 
-COGUTIL_API void atomspace_get_stats(atomspace_t as, atomspace_stats_t* stats) {
+ATOMSPACE_API void atomspace_get_stats(atomspace_t as, atomspace_stats_t* stats) {
     if (!stats) return;
     memset(stats, 0, sizeof(*stats));
     if (!as) return;
@@ -996,7 +996,7 @@ COGUTIL_API void atomspace_get_stats(atomspace_t as, atomspace_stats_t* stats) {
     }
 }
 
-COGUTIL_API size_t atomspace_size(atomspace_t as) {
+ATOMSPACE_API size_t atomspace_size(atomspace_t as) {
     if (!as) return 0;
     pthread_rwlock_rdlock(&as->lock);
     size_t n = as->atom_count;
@@ -1062,7 +1062,7 @@ static bool save_visit(atom_t* atom, void* user) {
     return true;
 }
 
-COGUTIL_API cog_result_t atomspace_save(atomspace_t as, const char* path) {
+ATOMSPACE_API cog_result_t atomspace_save(atomspace_t as, const char* path) {
     if (!as || !path) return COG_ERROR_INVALID_ARG;
     FILE* f = fopen(path, "w");
     if (!f) return COG_ERROR_IO;
@@ -1093,7 +1093,7 @@ static atom_handle_t handle_map_get(handle_map_entry_t* map, atom_handle_t old_h
     return ATOM_HANDLE_INVALID;
 }
 
-COGUTIL_API cog_result_t atomspace_load(atomspace_t as, const char* path) {
+ATOMSPACE_API cog_result_t atomspace_load(atomspace_t as, const char* path) {
     if (!as || !path) return COG_ERROR_INVALID_ARG;
     FILE* f = fopen(path, "r");
     if (!f) return COG_ERROR_IO;
@@ -1234,7 +1234,7 @@ static atom_type_t scheme_name_to_type(const char* name) {
     return ATOM_TYPE_CONCEPT_NODE;
 }
 
-COGUTIL_API char* atomspace_to_scheme(atomspace_t as, atom_handle_t handle) {
+ATOMSPACE_API char* atomspace_to_scheme(atomspace_t as, atom_handle_t handle) {
     if (!as) return NULL;
 
     pthread_rwlock_rdlock(&as->lock);
@@ -1270,7 +1270,7 @@ COGUTIL_API char* atomspace_to_scheme(atomspace_t as, atom_handle_t handle) {
     return result;
 }
 
-COGUTIL_API atom_handle_t atomspace_from_scheme(atomspace_t as, const char* scheme_expr) {
+ATOMSPACE_API atom_handle_t atomspace_from_scheme(atomspace_t as, const char* scheme_expr) {
     if (!as || !scheme_expr) return ATOM_HANDLE_INVALID;
 
     /* Minimal parser: (TypeName "name") */
@@ -1286,7 +1286,7 @@ COGUTIL_API atom_handle_t atomspace_from_scheme(atomspace_t as, const char* sche
  * 9P/Styx Integration
  *===========================================================================*/
 
-COGUTIL_API cog_result_t atomspace_export_9p(atomspace_t as, const char* mount_point) {
+ATOMSPACE_API cog_result_t atomspace_export_9p(atomspace_t as, const char* mount_point) {
     if (!as || !mount_point) return COG_ERROR_INVALID_ARG;
     /* Full 9P export is provided by the plan9 integration layer; the core
      * library records the request as a success no-op so callers can probe
@@ -1294,12 +1294,12 @@ COGUTIL_API cog_result_t atomspace_export_9p(atomspace_t as, const char* mount_p
     return COG_ERROR_NOT_IMPLEMENTED;
 }
 
-COGUTIL_API cog_result_t atomspace_unexport_9p(atomspace_t as) {
+ATOMSPACE_API cog_result_t atomspace_unexport_9p(atomspace_t as) {
     if (!as) return COG_ERROR_INVALID_ARG;
     return COG_ERROR_NOT_IMPLEMENTED;
 }
 
-COGUTIL_API atom_handle_t atomspace_get_by_path(atomspace_t as, const char* path) {
+ATOMSPACE_API atom_handle_t atomspace_get_by_path(atomspace_t as, const char* path) {
     if (!as || !path || path[0] != '/') return ATOM_HANDLE_INVALID;
 
     /* Path format: /<type-number>/<name> */
@@ -1323,7 +1323,7 @@ COGUTIL_API atom_handle_t atomspace_get_by_path(atomspace_t as, const char* path
     return atomspace_get_node(as, (atom_type_t)type_num, name);
 }
 
-COGUTIL_API char* atomspace_get_path(atomspace_t as, atom_handle_t handle) {
+ATOMSPACE_API char* atomspace_get_path(atomspace_t as, atom_handle_t handle) {
     if (!as) return NULL;
     pthread_rwlock_rdlock(&as->lock);
     atom_t* atom = find_atom(as, handle);
@@ -1341,7 +1341,7 @@ COGUTIL_API char* atomspace_get_path(atomspace_t as, atom_handle_t handle) {
  * Dis VM Integration
  *===========================================================================*/
 
-COGUTIL_API atom_handle_t atomspace_register_dis_module(
+ATOMSPACE_API atom_handle_t atomspace_register_dis_module(
     atomspace_t as,
     const char* module_name,
     void* dis_module
@@ -1358,7 +1358,7 @@ COGUTIL_API atom_handle_t atomspace_register_dis_module(
     return handle;
 }
 
-COGUTIL_API cog_result_t atomspace_execute_limbo(
+ATOMSPACE_API cog_result_t atomspace_execute_limbo(
     atomspace_t as,
     atom_handle_t proc_node,
     atom_handle_t* args,
@@ -1380,7 +1380,7 @@ COGUTIL_API cog_result_t atomspace_execute_limbo(
  * Kernel Integration
  *===========================================================================*/
 
-COGUTIL_API atom_handle_t atomspace_register_kernel_object(
+ATOMSPACE_API atom_handle_t atomspace_register_kernel_object(
     atomspace_t as,
     atom_type_t type,
     const char* name,
@@ -1397,7 +1397,7 @@ COGUTIL_API atom_handle_t atomspace_register_kernel_object(
     return handle;
 }
 
-COGUTIL_API void* atomspace_get_kernel_handle(atomspace_t as, atom_handle_t handle) {
+ATOMSPACE_API void* atomspace_get_kernel_handle(atomspace_t as, atom_handle_t handle) {
     if (!as) return NULL;
     pthread_rwlock_rdlock(&as->lock);
     atom_t* atom = find_atom(as, handle);

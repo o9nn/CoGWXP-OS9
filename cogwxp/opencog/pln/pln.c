@@ -116,7 +116,7 @@ static void history_record(
  * Truth Value Formulas
  *===========================================================================*/
 
-COGUTIL_API truth_value_t pln_tv_deduction(
+PLN_API truth_value_t pln_tv_deduction(
     truth_value_t tv_ab,
     truth_value_t tv_bc,
     truth_value_t tv_a,
@@ -142,7 +142,7 @@ COGUTIL_API truth_value_t pln_tv_deduction(
     return result;
 }
 
-COGUTIL_API truth_value_t pln_tv_induction(
+PLN_API truth_value_t pln_tv_induction(
     truth_value_t tv_ab,
     truth_value_t tv_ac,
     truth_value_t tv_a,
@@ -164,7 +164,7 @@ COGUTIL_API truth_value_t pln_tv_induction(
     return result;
 }
 
-COGUTIL_API truth_value_t pln_tv_abduction(
+PLN_API truth_value_t pln_tv_abduction(
     truth_value_t tv_ab,
     truth_value_t tv_cb,
     truth_value_t tv_a,
@@ -186,14 +186,14 @@ COGUTIL_API truth_value_t pln_tv_abduction(
     return result;
 }
 
-COGUTIL_API truth_value_t pln_tv_and(truth_value_t tv1, truth_value_t tv2) {
+PLN_API truth_value_t pln_tv_and(truth_value_t tv1, truth_value_t tv2) {
     truth_value_t result = { TRUTH_VALUE_SIMPLE, 0.0, 0.0, 1.0 };
     result.strength = clamp01(tv1.strength * tv2.strength);
     result.confidence = fmin(tv1.confidence, tv2.confidence);
     return result;
 }
 
-COGUTIL_API truth_value_t pln_tv_or(truth_value_t tv1, truth_value_t tv2) {
+PLN_API truth_value_t pln_tv_or(truth_value_t tv1, truth_value_t tv2) {
     truth_value_t result = { TRUTH_VALUE_SIMPLE, 0.0, 0.0, 1.0 };
     result.strength =
         clamp01(tv1.strength + tv2.strength - tv1.strength * tv2.strength);
@@ -201,14 +201,14 @@ COGUTIL_API truth_value_t pln_tv_or(truth_value_t tv1, truth_value_t tv2) {
     return result;
 }
 
-COGUTIL_API truth_value_t pln_tv_not(truth_value_t tv) {
+PLN_API truth_value_t pln_tv_not(truth_value_t tv) {
     truth_value_t result = { TRUTH_VALUE_SIMPLE, 0.0, 0.0, 1.0 };
     result.strength = clamp01(1.0 - tv.strength);
     result.confidence = tv.confidence;
     return result;
 }
 
-COGUTIL_API truth_value_t pln_tv_revision(truth_value_t tv1, truth_value_t tv2) {
+PLN_API truth_value_t pln_tv_revision(truth_value_t tv1, truth_value_t tv2) {
     truth_value_t result = { TRUTH_VALUE_SIMPLE, 0.0, 0.0, 1.0 };
 
     double n1 = tv_to_evidence_count(tv1.confidence, PLN_DEFAULT_K);
@@ -232,7 +232,7 @@ COGUTIL_API truth_value_t pln_tv_revision(truth_value_t tv1, truth_value_t tv2) 
  * Configuration
  *===========================================================================*/
 
-COGUTIL_API pln_config_t pln_config_default(void) {
+PLN_API pln_config_t pln_config_default(void) {
     pln_config_t config;
     memset(&config, 0, sizeof(config));
     config.max_inference_steps = 100;
@@ -255,7 +255,7 @@ COGUTIL_API pln_config_t pln_config_default(void) {
  * Engine Lifecycle
  *===========================================================================*/
 
-COGUTIL_API pln_engine_t pln_engine_create(atomspace_t as, pln_config_t* config) {
+PLN_API pln_engine_t pln_engine_create(atomspace_t as, pln_config_t* config) {
     struct pln_engine* engine = calloc(1, sizeof(struct pln_engine));
     if (!engine) return NULL;
     engine->atomspace = as;
@@ -264,19 +264,19 @@ COGUTIL_API pln_engine_t pln_engine_create(atomspace_t as, pln_config_t* config)
     return engine;
 }
 
-COGUTIL_API void pln_engine_destroy(pln_engine_t engine) {
+PLN_API void pln_engine_destroy(pln_engine_t engine) {
     if (!engine) return;
     pln_clear_inference_history(engine);
     free(engine->history);
     free(engine);
 }
 
-COGUTIL_API void pln_engine_set_config(pln_engine_t engine, pln_config_t* config) {
+PLN_API void pln_engine_set_config(pln_engine_t engine, pln_config_t* config) {
     if (!engine || !config) return;
     engine->config = *config;
 }
 
-COGUTIL_API pln_config_t pln_engine_get_config(pln_engine_t engine) {
+PLN_API pln_config_t pln_engine_get_config(pln_engine_t engine) {
     if (!engine) return pln_config_default();
     return engine->config;
 }
@@ -329,7 +329,7 @@ static bool try_deduction(
     return true;
 }
 
-COGUTIL_API rule_application_t* pln_apply_rule(
+PLN_API rule_application_t* pln_apply_rule(
     pln_engine_t engine,
     pln_rule_type_t rule,
     atom_handle_t* premises,
@@ -427,7 +427,7 @@ COGUTIL_API rule_application_t* pln_apply_rule(
     return app;
 }
 
-COGUTIL_API atom_handle_t* pln_get_applicable_rules(
+PLN_API atom_handle_t* pln_get_applicable_rules(
     pln_engine_t engine,
     atom_handle_t atom,
     size_t* count
@@ -449,7 +449,7 @@ COGUTIL_API atom_handle_t* pln_get_applicable_rules(
     return rules;
 }
 
-COGUTIL_API void pln_rule_application_free(rule_application_t* app) {
+PLN_API void pln_rule_application_free(rule_application_t* app) {
     if (!app) return;
     free(app->premises);
     free(app);
@@ -521,7 +521,7 @@ static size_t forward_chain_step(
     return derived;
 }
 
-COGUTIL_API forward_chain_result_t* pln_forward_chain(
+PLN_API forward_chain_result_t* pln_forward_chain(
     pln_engine_t engine,
     atom_handle_t source,
     size_t max_steps
@@ -563,7 +563,7 @@ COGUTIL_API forward_chain_result_t* pln_forward_chain(
     return result;
 }
 
-COGUTIL_API forward_chain_result_t* pln_forward_chain_multi(
+PLN_API forward_chain_result_t* pln_forward_chain_multi(
     pln_engine_t engine,
     atom_handle_t* sources,
     size_t source_count,
@@ -593,7 +593,7 @@ COGUTIL_API forward_chain_result_t* pln_forward_chain_multi(
     return combined;
 }
 
-COGUTIL_API void pln_forward_chain_result_free(forward_chain_result_t* result) {
+PLN_API void pln_forward_chain_result_free(forward_chain_result_t* result) {
     if (!result) return;
     free(result->derived_atoms);
     free(result);
@@ -671,7 +671,7 @@ static bool backward_search(
     return achieved;
 }
 
-COGUTIL_API backward_chain_result_t* pln_backward_chain(
+PLN_API backward_chain_result_t* pln_backward_chain(
     pln_engine_t engine,
     atom_handle_t goal,
     size_t max_depth
@@ -699,7 +699,7 @@ COGUTIL_API backward_chain_result_t* pln_backward_chain(
     return result;
 }
 
-COGUTIL_API backward_chain_result_t* pln_backward_chain_with_premises(
+PLN_API backward_chain_result_t* pln_backward_chain_with_premises(
     pln_engine_t engine,
     atom_handle_t goal,
     atom_handle_t* premises,
@@ -719,7 +719,7 @@ COGUTIL_API backward_chain_result_t* pln_backward_chain_with_premises(
     return pln_backward_chain(engine, goal, max_depth);
 }
 
-COGUTIL_API void pln_backward_chain_result_free(backward_chain_result_t* result) {
+PLN_API void pln_backward_chain_result_free(backward_chain_result_t* result) {
     if (!result) return;
     free(result->proof_atoms);
     free(result);
@@ -729,12 +729,12 @@ COGUTIL_API void pln_backward_chain_result_free(backward_chain_result_t* result)
  * Inference Control
  *===========================================================================*/
 
-COGUTIL_API void pln_set_control_strategy(pln_engine_t engine, pln_control_strategy_t strategy) {
+PLN_API void pln_set_control_strategy(pln_engine_t engine, pln_control_strategy_t strategy) {
     if (!engine) return;
     engine->strategy = strategy;
 }
 
-COGUTIL_API void pln_set_rule_selector(
+PLN_API void pln_set_rule_selector(
     pln_engine_t engine,
     pln_rule_selector_t selector,
     void* user_data
@@ -748,7 +748,7 @@ COGUTIL_API void pln_set_rule_selector(
  * Inference History
  *===========================================================================*/
 
-COGUTIL_API inference_step_t* pln_get_inference_history(
+PLN_API inference_step_t* pln_get_inference_history(
     pln_engine_t engine,
     size_t* count
 ) {
@@ -780,7 +780,7 @@ COGUTIL_API inference_step_t* pln_get_inference_history(
     return copy;
 }
 
-COGUTIL_API void pln_clear_inference_history(pln_engine_t engine) {
+PLN_API void pln_clear_inference_history(pln_engine_t engine) {
     if (!engine) return;
     for (size_t i = 0; i < engine->history_count; i++) {
         free(engine->history[i].premises);
@@ -788,7 +788,7 @@ COGUTIL_API void pln_clear_inference_history(pln_engine_t engine) {
     engine->history_count = 0;
 }
 
-COGUTIL_API void pln_inference_history_free(inference_step_t* history, size_t count) {
+PLN_API void pln_inference_history_free(inference_step_t* history, size_t count) {
     if (!history) return;
     for (size_t i = 0; i < count; i++) {
         free(history[i].premises);
@@ -800,7 +800,7 @@ COGUTIL_API void pln_inference_history_free(inference_step_t* history, size_t co
  * Distributed PLN (9P/Dis Integration)
  *===========================================================================*/
 
-COGUTIL_API cog_result_t pln_distributed_forward_chain(
+PLN_API cog_result_t pln_distributed_forward_chain(
     pln_engine_t engine,
     atom_handle_t source,
     const char** endpoints,
@@ -818,7 +818,7 @@ COGUTIL_API cog_result_t pln_distributed_forward_chain(
     return COG_ERROR_NOT_IMPLEMENTED;
 }
 
-COGUTIL_API cog_result_t pln_execute_in_dis(
+PLN_API cog_result_t pln_execute_in_dis(
     pln_engine_t engine,
     pln_rule_type_t rule,
     atom_handle_t* premises,
@@ -835,7 +835,7 @@ COGUTIL_API cog_result_t pln_execute_in_dis(
     return COG_ERROR_NOT_IMPLEMENTED;
 }
 
-COGUTIL_API cog_result_t pln_register_limbo_rule(
+PLN_API cog_result_t pln_register_limbo_rule(
     pln_engine_t engine,
     const char* rule_name,
     const char* limbo_module,
@@ -851,14 +851,14 @@ COGUTIL_API cog_result_t pln_register_limbo_rule(
  * Statistics
  *===========================================================================*/
 
-COGUTIL_API void pln_get_stats(pln_engine_t engine, pln_stats_t* stats) {
+PLN_API void pln_get_stats(pln_engine_t engine, pln_stats_t* stats) {
     if (!stats) return;
     memset(stats, 0, sizeof(*stats));
     if (!engine) return;
     *stats = engine->stats;
 }
 
-COGUTIL_API void pln_reset_stats(pln_engine_t engine) {
+PLN_API void pln_reset_stats(pln_engine_t engine) {
     if (!engine) return;
     memset(&engine->stats, 0, sizeof(engine->stats));
 }

@@ -92,7 +92,7 @@ static niche_skill_t* create_skill(uint64_t id, const char* name) {
  * Initialization and Shutdown
  *===========================================================================*/
 
-COGUTIL_API cog_result_t niche_engine_init(
+COGWXPOS_API cog_result_t niche_engine_init(
     const niche_config_t* config,
     niche_engine_t* engine
 ) {
@@ -127,7 +127,7 @@ COGUTIL_API cog_result_t niche_engine_init(
     return COG_SUCCESS;
 }
 
-COGUTIL_API void niche_engine_shutdown(niche_engine_t engine) {
+COGWXPOS_API void niche_engine_shutdown(niche_engine_t engine) {
     if (!engine) return;
     
     pthread_mutex_lock(&engine->lock);
@@ -177,7 +177,7 @@ COGUTIL_API void niche_engine_shutdown(niche_engine_t engine) {
  * Skill Development
  *===========================================================================*/
 
-COGUTIL_API cog_result_t niche_propose_technique(
+COGWXPOS_API cog_result_t niche_propose_technique(
     niche_engine_t engine,
     atom_handle_t intent,
     void* context,
@@ -221,7 +221,7 @@ COGUTIL_API cog_result_t niche_propose_technique(
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t niche_normalize_proposals(
+COGWXPOS_API cog_result_t niche_normalize_proposals(
     niche_engine_t engine,
     niche_glyph_t** proposals,
     size_t proposal_count,
@@ -240,7 +240,7 @@ COGUTIL_API cog_result_t niche_normalize_proposals(
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t niche_refine_technique(
+COGWXPOS_API cog_result_t niche_refine_technique(
     niche_engine_t engine,
     niche_glyph_t* glyph,
     niche_trace_t* execution_trace,
@@ -263,7 +263,7 @@ COGUTIL_API cog_result_t niche_refine_technique(
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t niche_commit_skill(
+COGWXPOS_API cog_result_t niche_commit_skill(
     niche_engine_t engine,
     niche_glyph_t* glyph,
     const char* skill_name,
@@ -301,7 +301,7 @@ COGUTIL_API cog_result_t niche_commit_skill(
  * Opponent Processing Cycles
  *===========================================================================*/
 
-COGUTIL_API cog_result_t niche_opponent_cycle(
+COGWXPOS_API cog_result_t niche_opponent_cycle(
     niche_engine_t engine,
     atom_handle_t goal,
     void* context,
@@ -381,7 +381,7 @@ COGUTIL_API cog_result_t niche_opponent_cycle(
     return res;
 }
 
-COGUTIL_API cog_result_t niche_train_skill(
+COGWXPOS_API cog_result_t niche_train_skill(
     niche_engine_t engine,
     atom_handle_t goal,
     niche_trace_t** training_traces,
@@ -420,7 +420,7 @@ COGUTIL_API cog_result_t niche_train_skill(
  * Environment Shaping (Stub implementations)
  *===========================================================================*/
 
-COGUTIL_API cog_result_t niche_propose_action(
+COGWXPOS_API cog_result_t niche_propose_action(
     niche_engine_t engine,
     atom_handle_t goal,
     niche_action_type_t action_type,
@@ -438,7 +438,7 @@ COGUTIL_API cog_result_t niche_propose_action(
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t niche_execute_action(
+COGWXPOS_API cog_result_t niche_execute_action(
     niche_engine_t engine,
     niche_action_t* action
 ) {
@@ -449,7 +449,7 @@ COGUTIL_API cog_result_t niche_execute_action(
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t niche_query_skills(
+COGWXPOS_API cog_result_t niche_query_skills(
     niche_engine_t engine,
     atom_handle_t intent_pattern,
     niche_skill_t** skills,
@@ -465,7 +465,7 @@ COGUTIL_API cog_result_t niche_query_skills(
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t niche_get_stats(
+COGWXPOS_API cog_result_t niche_get_stats(
     niche_engine_t engine,
     char** stats_json,
     size_t* json_size
@@ -497,54 +497,54 @@ COGUTIL_API cog_result_t niche_get_stats(
 }
 
 /* Stub implementations for remaining functions */
-COGUTIL_API cog_result_t niche_execute_skill(niche_engine_t engine, niche_skill_t* skill,
+COGWXPOS_API cog_result_t niche_execute_skill(niche_engine_t engine, niche_skill_t* skill,
     void* inputs, size_t input_size, void** outputs, size_t* output_size, niche_trace_t** trace) {
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t niche_glyph_to_trace(niche_engine_t engine, niche_glyph_t* glyph,
+COGWXPOS_API cog_result_t niche_glyph_to_trace(niche_engine_t engine, niche_glyph_t* glyph,
     niche_trace_t** trace) { return COG_SUCCESS; }
 
-COGUTIL_API cog_result_t niche_trace_to_glyph(niche_engine_t engine, niche_trace_t* trace,
+COGWXPOS_API cog_result_t niche_trace_to_glyph(niche_engine_t engine, niche_trace_t* trace,
     niche_glyph_t** glyph) { return COG_SUCCESS; }
 
-COGUTIL_API cog_result_t niche_evaluate_action(niche_engine_t engine, niche_action_t* action,
+COGWXPOS_API cog_result_t niche_evaluate_action(niche_engine_t engine, niche_action_t* action,
     double* impact_score) { *impact_score = 0.7; return COG_SUCCESS; }
 
-COGUTIL_API cog_result_t niche_rollback_action(niche_engine_t engine, niche_action_t* action) {
+COGWXPOS_API cog_result_t niche_rollback_action(niche_engine_t engine, niche_action_t* action) {
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t niche_get_skill(niche_engine_t engine, const char* name,
+COGWXPOS_API cog_result_t niche_get_skill(niche_engine_t engine, const char* name,
     niche_skill_t** skill) { return COG_ERROR_NOT_FOUND; }
 
-COGUTIL_API cog_result_t niche_update_skill_stats(niche_engine_t engine, niche_skill_t* skill,
+COGWXPOS_API cog_result_t niche_update_skill_stats(niche_engine_t engine, niche_skill_t* skill,
     bool success, double reward) { return COG_SUCCESS; }
 
-COGUTIL_API cog_result_t niche_compose_skills(niche_engine_t engine, niche_skill_t** skills,
+COGWXPOS_API cog_result_t niche_compose_skills(niche_engine_t engine, niche_skill_t** skills,
     size_t skill_count, const char* composite_name, niche_skill_t** composite_skill) {
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t niche_compute_free_energy(niche_engine_t engine, niche_glyph_t* glyph,
+COGWXPOS_API cog_result_t niche_compute_free_energy(niche_engine_t engine, niche_glyph_t* glyph,
     atom_handle_t goal, double* free_energy) { *free_energy = 1.0; return COG_SUCCESS; }
 
-COGUTIL_API cog_result_t niche_active_inference_select(niche_engine_t engine, atom_handle_t goal,
+COGWXPOS_API cog_result_t niche_active_inference_select(niche_engine_t engine, atom_handle_t goal,
     void** candidate_actions, size_t action_count, void** selected_action) { return COG_SUCCESS; }
 
-COGUTIL_API cog_result_t niche_export_glyph(niche_engine_t engine, niche_glyph_t* glyph,
+COGWXPOS_API cog_result_t niche_export_glyph(niche_engine_t engine, niche_glyph_t* glyph,
     const char* output_path, const char* format) { return COG_SUCCESS; }
 
-COGUTIL_API cog_result_t niche_visualize_library(niche_engine_t engine, const char* output_path) {
+COGWXPOS_API cog_result_t niche_visualize_library(niche_engine_t engine, const char* output_path) {
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t niche_save_library(niche_engine_t engine, const char* path) {
+COGWXPOS_API cog_result_t niche_save_library(niche_engine_t engine, const char* path) {
     printf("[NicheEngine] Saved library to %s\n", path);
     return COG_SUCCESS;
 }
 
-COGUTIL_API cog_result_t niche_load_library(niche_engine_t engine, const char* path) {
+COGWXPOS_API cog_result_t niche_load_library(niche_engine_t engine, const char* path) {
     printf("[NicheEngine] Loaded library from %s\n", path);
     return COG_SUCCESS;
 }
