@@ -8,6 +8,7 @@
 #include <stdlib.h>
 #include <stdint.h>
 #include <errno.h>
+#include <time.h>
 
 typedef HANDLE pthread_t;
 typedef SRWLOCK pthread_mutex_t;
@@ -126,6 +127,13 @@ static inline int pthread_mutex_lock(pthread_mutex_t* mutex) {
     return 0;
 }
 
+static inline int pthread_mutex_trylock(pthread_mutex_t* mutex) {
+    if (!mutex) {
+        return EINVAL;
+    }
+    return TryAcquireSRWLockExclusive(mutex) ? 0 : EBUSY;
+}
+
 static inline int pthread_mutex_unlock(pthread_mutex_t* mutex) {
     if (!mutex) {
         return EINVAL;
@@ -231,6 +239,38 @@ static inline int pthread_cond_wait(pthread_cond_t* cond, pthread_mutex_t* mutex
     return SleepConditionVariableSRW(cond, mutex, INFINITE, 0) ? 0 : EINVAL;
 }
 
+static inline int pthread_cond_timedwait(
+    pthread_cond_t* cond,
+    pthread_mutex_t* mutex,
+    const struct timespec* abstime
+) {
+    DWORD timeout_ms;
+    struct timespec now;
+    uint64_t now_ms;
+    uint64_t target_ms;
+
+    if (!cond || !mutex || !abstime) {
+        return EINVAL;
+    }
+
+    timespec_get(&now, TIME_UTC);
+    now_ms = ((uint64_t)now.tv_sec * 1000ULL) + ((uint64_t)now.tv_nsec / 1000000ULL);
+    target_ms = ((uint64_t)abstime->tv_sec * 1000ULL) +
+                (((uint64_t)abstime->tv_nsec + 999999ULL) / 1000000ULL);
+
+    timeout_ms = (target_ms > now_ms)
+        ? (DWORD)((target_ms - now_ms) > (uint64_t)(INFINITE - 1)
+            ? (INFINITE - 1)
+            : (target_ms - now_ms))
+        : 0;
+
+    if (SleepConditionVariableSRW(cond, mutex, timeout_ms, 0)) {
+        return 0;
+    }
+
+    return GetLastError() == ERROR_TIMEOUT ? ETIMEDOUT : EINVAL;
+}
+
 static inline int pthread_cond_signal(pthread_cond_t* cond) {
     if (!cond) {
         return EINVAL;
@@ -245,6 +285,10 @@ static inline int pthread_cond_broadcast(pthread_cond_t* cond) {
     }
     WakeAllConditionVariable(cond);
     return 0;
+}
+
+static inline pthread_t pthread_self(void) {
+    return (pthread_t)(uintptr_t)GetCurrentThreadId();
 }
 
 #else

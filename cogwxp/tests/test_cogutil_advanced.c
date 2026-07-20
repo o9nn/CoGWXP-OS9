@@ -106,9 +106,11 @@ static void test_rwlock_lifecycle(void) {
  *===========================================================================*/
 
 static atomic_int g_thread_counter = 0;
+static uint64_t g_worker_thread_id = 0;
 
 static void* thread_increment(void* arg) {
     (void)arg;
+    g_worker_thread_id = cog_thread_id();
     atomic_fetch_add(&g_thread_counter, 1);
     return NULL;
 }
@@ -117,12 +119,18 @@ static void test_thread_lifecycle(void) {
     printf("\n=== Thread Lifecycle ===\n");
 
     atomic_store(&g_thread_counter, 0);
+    g_worker_thread_id = 0;
+
+    uint64_t main_thread_id = cog_thread_id();
 
     cog_thread_t t = cog_thread_create(thread_increment, NULL);
     TEST_ASSERT(t != NULL, "Thread created");
 
     cog_thread_join(t);
     TEST_ASSERT(atomic_load(&g_thread_counter) == 1, "Thread executed its function");
+    TEST_ASSERT(main_thread_id != 0, "Main thread ID is non-zero");
+    TEST_ASSERT(g_worker_thread_id != 0, "Worker thread ID is non-zero");
+    TEST_ASSERT(g_worker_thread_id != main_thread_id, "Worker thread ID differs from main thread ID");
 }
 
 static void test_multiple_threads(void) {
@@ -219,6 +227,22 @@ static void test_cond_signal(void) {
 
     cog_cond_destroy(s.cond);
     cog_mutex_destroy(s.mutex);
+}
+
+static void test_cond_timedwait_timeout(void) {
+    printf("\n=== Condition Variable Timed Wait Timeout ===\n");
+
+    cog_mutex_t mutex = cog_mutex_create();
+    cog_cond_t cond = cog_cond_create();
+    TEST_ASSERT(mutex != NULL, "Timed wait mutex created");
+    TEST_ASSERT(cond != NULL, "Timed wait condition created");
+
+    cog_mutex_lock(mutex);
+    TEST_ASSERT(!cog_cond_timedwait(cond, mutex, 20), "Timed wait times out without a signal");
+    cog_mutex_unlock(mutex);
+
+    cog_cond_destroy(cond);
+    cog_mutex_destroy(mutex);
 }
 
 /*===========================================================================
@@ -554,6 +578,7 @@ int main(void) {
     test_multiple_threads();
     test_threadpool();
     test_cond_signal();
+    test_cond_timedwait_timeout();
     test_uuid_uniqueness();
     test_uuid_string_roundtrip();
     test_hash_string_stability();
