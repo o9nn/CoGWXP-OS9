@@ -9,6 +9,9 @@
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
+#if defined(_WIN32)
+#include <windows.h>
+#endif
 #include <time.h>
 #include <pthread.h>
 #include <math.h>
