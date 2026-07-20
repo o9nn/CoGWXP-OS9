@@ -55,9 +55,17 @@ struct beast_reactor {
  *===========================================================================*/
 
 static uint64_t get_time_ms(void) {
+#if defined(_WIN32)
+    return (uint64_t)GetTickCount64();
+#elif defined(CLOCK_MONOTONIC)
     struct timespec ts;
     clock_gettime(CLOCK_MONOTONIC, &ts);
     return (uint64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+#else
+    struct timespec ts;
+    timespec_get(&ts, TIME_UTC);
+    return (uint64_t)ts.tv_sec * 1000 + ts.tv_nsec / 1000000;
+#endif
 }
 
 static uint64_t generate_task_id(beast_reactor_t reactor) {
@@ -370,7 +378,7 @@ COGWXPOS_API cog_result_t beast_wait_task(
         }
         
         pthread_mutex_unlock(&reactor->lock);
-        usleep(10000);  /* Sleep 10ms */
+        cog_time_sleep_ms(10);
     }
     
     return COG_ERROR_TIMEOUT;
