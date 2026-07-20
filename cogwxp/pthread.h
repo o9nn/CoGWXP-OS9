@@ -25,6 +25,9 @@ typedef void pthread_condattr_t;
 #define PTHREAD_RWLOCK_INITIALIZER { SRWLOCK_INIT }
 #define PTHREAD_COND_INITIALIZER CONDITION_VARIABLE_INIT
 
+#define COGWXP_NSEC_PER_MSEC              1000000ULL
+#define COGWXP_NSEC_TO_MSEC_ROUNDUP_BIAS   999999ULL
+
 typedef struct {
     void* (*start_routine)(void*);
     void* arg;
@@ -254,9 +257,10 @@ static inline int pthread_cond_timedwait(
     }
 
     timespec_get(&now, TIME_UTC);
-    now_ms = ((uint64_t)now.tv_sec * 1000ULL) + ((uint64_t)now.tv_nsec / 1000000ULL);
+    now_ms = ((uint64_t)now.tv_sec * 1000ULL) + ((uint64_t)now.tv_nsec / COGWXP_NSEC_PER_MSEC);
     target_ms = ((uint64_t)abstime->tv_sec * 1000ULL) +
-                (((uint64_t)abstime->tv_nsec + 999999ULL) / 1000000ULL);
+                (((uint64_t)abstime->tv_nsec + COGWXP_NSEC_TO_MSEC_ROUNDUP_BIAS) /
+                 COGWXP_NSEC_PER_MSEC);
 
     timeout_ms = (target_ms > now_ms)
         ? (DWORD)((target_ms - now_ms) > (uint64_t)(INFINITE - 1)
@@ -288,7 +292,7 @@ static inline int pthread_cond_broadcast(pthread_cond_t* cond) {
 }
 
 static inline pthread_t pthread_self(void) {
-    return (pthread_t)(uintptr_t)GetCurrentThreadId();
+    return GetCurrentThread();
 }
 
 #else

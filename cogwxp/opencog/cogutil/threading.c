@@ -206,7 +206,11 @@ COGUTIL_API void cog_thread_yield(void) {
 }
 
 COGUTIL_API uint64_t cog_thread_id(void) {
+#ifdef _WIN32
+    return (uint64_t)GetCurrentThreadId();
+#else
     return (uint64_t)(uintptr_t)pthread_self();
+#endif
 }
 
 static void* threadpool_worker(void* arg) {
