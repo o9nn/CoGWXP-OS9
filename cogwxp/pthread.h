@@ -277,7 +277,7 @@ static inline int pthread_cond_timedwait(
         delta_ns = target_ns - now_ns;
         delta_ms = delta_ns / COGWXP_NSEC_PER_MSEC;
         if ((delta_ns % COGWXP_NSEC_PER_MSEC) != 0 &&
-            delta_ms < COGWXP_MAX_TIMEOUT_MS) {
+            delta_ms <= COGWXP_MAX_TIMEOUT_MS) {
             delta_ms++;
         }
         timeout_ms = (delta_ms > COGWXP_MAX_TIMEOUT_MS)

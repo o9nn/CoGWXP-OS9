@@ -246,6 +246,40 @@ static void test_cond_timedwait_timeout(void) {
     cog_mutex_destroy(mutex);
 }
 
+static void* cond_timed_sender(void* arg) {
+    cond_shared_t* s = (cond_shared_t*)arg;
+    cog_sleep_ms(10);
+    cog_mutex_lock(s->mutex);
+    s->ready = 1;
+    cog_cond_signal(s->cond);
+    cog_mutex_unlock(s->mutex);
+    return NULL;
+}
+
+static void test_cond_timedwait_signal(void) {
+    printf("\n=== Condition Variable Timed Wait Signal ===\n");
+
+    cond_shared_t s;
+    s.mutex = cog_mutex_create();
+    s.cond = cog_cond_create();
+    s.ready = 0;
+    s.value = 0;
+
+    cog_thread_t sender = cog_thread_create(cond_timed_sender, &s);
+    TEST_ASSERT(sender != NULL, "Timed wait sender thread created");
+
+    cog_mutex_lock(s.mutex);
+    while (!s.ready) {
+        TEST_ASSERT(cog_cond_timedwait(s.cond, s.mutex, 100),
+                    "Timed wait succeeds when signalled before timeout");
+    }
+    cog_mutex_unlock(s.mutex);
+
+    cog_thread_join(sender);
+    cog_cond_destroy(s.cond);
+    cog_mutex_destroy(s.mutex);
+}
+
 /*===========================================================================
  * UUID Tests
  *===========================================================================*/
@@ -580,6 +614,7 @@ int main(void) {
     test_threadpool();
     test_cond_signal();
     test_cond_timedwait_timeout();
+    test_cond_timedwait_signal();
     test_uuid_uniqueness();
     test_uuid_string_roundtrip();
     test_hash_string_stability();
