@@ -238,7 +238,7 @@ static void test_cond_timedwait_timeout(void) {
     TEST_ASSERT(cond != NULL, "Timed wait condition created");
 
     cog_mutex_lock(mutex);
-    /* CogUtil's timed wait wrapper takes a relative timeout in milliseconds. */
+    /* Per cogutil.h, this wrapper takes a relative timeout in milliseconds. */
     TEST_ASSERT(!cog_cond_timedwait(cond, mutex, 20), "Timed wait times out without a signal");
     cog_mutex_unlock(mutex);
 
