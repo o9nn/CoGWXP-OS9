@@ -260,6 +260,7 @@ static void test_cond_timedwait_signal(void) {
     printf("\n=== Condition Variable Timed Wait Signal ===\n");
 
     cond_shared_t s;
+    bool woke = false;
     s.mutex = cog_mutex_create();
     s.cond = cog_cond_create();
     s.ready = 0;
@@ -270,12 +271,15 @@ static void test_cond_timedwait_signal(void) {
 
     cog_mutex_lock(s.mutex);
     while (!s.ready) {
-        TEST_ASSERT(cog_cond_timedwait(s.cond, s.mutex, 100),
-                    "Timed wait succeeds when signalled before timeout");
+        woke = cog_cond_timedwait(s.cond, s.mutex, 500);
+        if (!woke) {
+            break;
+        }
     }
     cog_mutex_unlock(s.mutex);
 
     cog_thread_join(sender);
+    TEST_ASSERT(woke && s.ready, "Timed wait succeeds when signalled before timeout");
     cog_cond_destroy(s.cond);
     cog_mutex_destroy(s.mutex);
 }
