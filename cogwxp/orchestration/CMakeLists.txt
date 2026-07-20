@@ -367,7 +367,9 @@ add_executable(cogwxp-orchestrate
     cli/orchestrate.c
     cli/commands.c
 )
-target_link_libraries(cogwxp-orchestrate PRIVATE orchestration)
+if(NOT WIN32)
+    target_link_libraries(cogwxp-orchestrate PRIVATE orchestration)
+endif()
 
 # ===========================================================================
 # Installation
