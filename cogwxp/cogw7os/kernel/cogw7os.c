@@ -185,6 +185,11 @@ struct cogw7_kernel {
 static void* scheduler_loop(void* arg);
 static void* reasoning_loop(void* arg);
 static void schedule_next(cogw7_kernel_t kernel);
+COGW7OS_API cog_result_t cogw7_kernel_shutdown(cogw7_kernel_t kernel);
+COGW7OS_API cog_result_t cogw7_service_start(
+    cogw7_kernel_t kernel,
+    cogw7_service_type_t type
+);
 
 /*===========================================================================
  * Kernel Lifecycle
