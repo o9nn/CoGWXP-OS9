@@ -105,6 +105,10 @@ if(ENABLE_NT_INTEGRATION)
     target_compile_definitions(cogw7os PRIVATE ENABLE_NT_INTEGRATION=1)
 endif()
 
+if(WIN32)
+    target_compile_definitions(cogw7os PRIVATE COGW7OS_EXPORTS)
+endif()
+
 set_target_properties(cogw7os PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1

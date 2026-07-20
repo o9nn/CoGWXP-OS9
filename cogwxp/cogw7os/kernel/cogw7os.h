@@ -18,6 +18,16 @@
 #include "../../plan9/9p/9p.h"
 #include "../../inferno/dis/dis.h"
 
+#ifdef COGUTIL_PLATFORM_NT
+    #ifdef COGW7OS_EXPORTS
+        #define COGW7OS_API __declspec(dllexport)
+    #else
+        #define COGW7OS_API __declspec(dllimport)
+    #endif
+#else
+    #define COGW7OS_API
+#endif
+
 #ifdef __cplusplus
 extern "C" {
 #endif
@@ -338,9 +348,9 @@ typedef struct cogw7_init_config {
     const char* log_file;
 } cogw7_init_config_t;
 
-COGUTIL_API cogw7_init_config_t cogw7_config_default(void);
-COGUTIL_API cog_result_t cogw7_kernel_init(cogw7_init_config_t* config);
-COGUTIL_API bool         cogw7_kernel_is_initialized(void);
+COGW7OS_API cogw7_init_config_t cogw7_config_default(void);
+COGW7OS_API cog_result_t cogw7_kernel_init(cogw7_init_config_t* config);
+COGW7OS_API bool         cogw7_kernel_is_initialized(void);
 
 #ifndef _COGW7_INTERNAL
 /* Public API function signatures (matching the kernel implementation) */
@@ -349,47 +359,47 @@ COGUTIL_API bool         cogw7_kernel_is_initialized(void);
  * Kernel Lifecycle (handle-based API)
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cogw7_kernel_create(
+COGW7OS_API cog_result_t cogw7_kernel_create(
     const cogw7_config_t* config,
     cogw7_kernel_t* kernel
 );
-COGUTIL_API void         cogw7_kernel_destroy(cogw7_kernel_t kernel);
-COGUTIL_API cog_result_t cogw7_kernel_boot(cogw7_kernel_t kernel);
-COGUTIL_API cog_result_t cogw7_kernel_shutdown(cogw7_kernel_t kernel);
-COGUTIL_API cogw7_kernel_state_t cogw7_kernel_get_state(cogw7_kernel_t kernel);
-COGUTIL_API cog_result_t cogw7_get_stats(cogw7_kernel_t kernel, cogw7_stats_t* stats);
-COGUTIL_API atomspace_t  cogw7_get_atomspace(cogw7_kernel_t kernel);
-COGUTIL_API pln_context_t cogw7_get_pln(cogw7_kernel_t kernel);
+COGW7OS_API void         cogw7_kernel_destroy(cogw7_kernel_t kernel);
+COGW7OS_API cog_result_t cogw7_kernel_boot(cogw7_kernel_t kernel);
+COGW7OS_API cog_result_t cogw7_kernel_shutdown(cogw7_kernel_t kernel);
+COGW7OS_API cogw7_kernel_state_t cogw7_kernel_get_state(cogw7_kernel_t kernel);
+COGW7OS_API cog_result_t cogw7_get_stats(cogw7_kernel_t kernel, cogw7_stats_t* stats);
+COGW7OS_API atomspace_t  cogw7_get_atomspace(cogw7_kernel_t kernel);
+COGW7OS_API pln_context_t cogw7_get_pln(cogw7_kernel_t kernel);
 
 /*===========================================================================
  * Process Management
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cogw7_process_create(
+COGW7OS_API cog_result_t cogw7_process_create(
     cogw7_kernel_t kernel,
     const char* name,
     uint32_t parent_pid,
     uint32_t* pid
 );
 
-COGUTIL_API cog_result_t cogw7_process_terminate(
+COGW7OS_API cog_result_t cogw7_process_terminate(
     cogw7_kernel_t kernel,
     uint32_t pid,
     int exit_code
 );
 
-COGUTIL_API cog_result_t cogw7_process_get_info(
+COGW7OS_API cog_result_t cogw7_process_get_info(
     cogw7_kernel_t kernel,
     uint32_t pid,
     cogw7_process_info_t* info
 );
 
-COGUTIL_API cog_result_t cogw7_process_set_atomspace(
+COGW7OS_API cog_result_t cogw7_process_set_atomspace(
     cogw7_handle_t process_handle,
     atomspace_t atomspace
 );
 
-COGUTIL_API atomspace_t cogw7_process_get_atomspace(
+COGW7OS_API atomspace_t cogw7_process_get_atomspace(
     cogw7_handle_t process_handle
 );
 
@@ -397,27 +407,27 @@ COGUTIL_API atomspace_t cogw7_process_get_atomspace(
  * Thread Management
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cogw7_thread_create(
+COGW7OS_API cog_result_t cogw7_thread_create(
     cogw7_handle_t process_handle,
     cog_thread_func_t entry_point,
     void* parameter,
     cogw7_handle_t* thread_handle
 );
 
-COGUTIL_API cog_result_t cogw7_thread_terminate(
+COGW7OS_API cog_result_t cogw7_thread_terminate(
     cogw7_handle_t thread_handle,
     uint32_t exit_code
 );
 
-COGUTIL_API cog_result_t cogw7_thread_suspend(cogw7_handle_t thread_handle);
-COGUTIL_API cog_result_t cogw7_thread_resume(cogw7_handle_t thread_handle);
+COGW7OS_API cog_result_t cogw7_thread_suspend(cogw7_handle_t thread_handle);
+COGW7OS_API cog_result_t cogw7_thread_resume(cogw7_handle_t thread_handle);
 
-COGUTIL_API cog_result_t cogw7_thread_set_priority(
+COGW7OS_API cog_result_t cogw7_thread_set_priority(
     cogw7_handle_t thread_handle,
     int8_t priority
 );
 
-COGUTIL_API cog_result_t cogw7_thread_set_cognitive_boost(
+COGW7OS_API cog_result_t cogw7_thread_set_cognitive_boost(
     cogw7_handle_t thread_handle,
     int8_t boost
 );
@@ -428,35 +438,35 @@ COGUTIL_API cog_result_t cogw7_thread_set_cognitive_boost(
  * Agent Management
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cogw7_agent_create(
+COGW7OS_API cog_result_t cogw7_agent_create(
     const char* name,
     const char** capabilities,
     size_t capability_count,
     cogw7_handle_t* agent_handle
 );
 
-COGUTIL_API cog_result_t cogw7_agent_destroy(cogw7_handle_t agent_handle);
+COGW7OS_API cog_result_t cogw7_agent_destroy(cogw7_handle_t agent_handle);
 
-COGUTIL_API cog_result_t cogw7_agent_start(cogw7_handle_t agent_handle);
-COGUTIL_API cog_result_t cogw7_agent_stop(cogw7_handle_t agent_handle);
+COGW7OS_API cog_result_t cogw7_agent_start(cogw7_handle_t agent_handle);
+COGW7OS_API cog_result_t cogw7_agent_stop(cogw7_handle_t agent_handle);
 
-COGUTIL_API cog_result_t cogw7_agent_send_message(
+COGW7OS_API cog_result_t cogw7_agent_send_message(
     cogw7_handle_t agent_handle,
     dis_value_t* message
 );
 
-COGUTIL_API cog_result_t cogw7_agent_receive_message(
+COGW7OS_API cog_result_t cogw7_agent_receive_message(
     cogw7_handle_t agent_handle,
     dis_value_t* message,
     uint32_t timeout_ms
 );
 
-COGUTIL_API cog_result_t cogw7_agent_set_goal(
+COGW7OS_API cog_result_t cogw7_agent_set_goal(
     cogw7_handle_t agent_handle,
     atom_handle_t goal
 );
 
-COGUTIL_API cog_result_t cogw7_agent_get_state(
+COGW7OS_API cog_result_t cogw7_agent_get_state(
     cogw7_handle_t agent_handle,
     cogw7_agent_state_t* state
 );
@@ -465,22 +475,22 @@ COGUTIL_API cog_result_t cogw7_agent_get_state(
  * Task Scheduling
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cogw7_task_create(
+COGW7OS_API cog_result_t cogw7_task_create(
     const char* name,
     atom_handle_t goal,
     int16_t priority,
     cogw7_handle_t* task_handle
 );
 
-COGUTIL_API cog_result_t cogw7_task_submit(cogw7_handle_t task_handle);
-COGUTIL_API cog_result_t cogw7_task_cancel(cogw7_handle_t task_handle);
+COGW7OS_API cog_result_t cogw7_task_submit(cogw7_handle_t task_handle);
+COGW7OS_API cog_result_t cogw7_task_cancel(cogw7_handle_t task_handle);
 
-COGUTIL_API cog_result_t cogw7_task_wait(
+COGW7OS_API cog_result_t cogw7_task_wait(
     cogw7_handle_t task_handle,
     uint32_t timeout_ms
 );
 
-COGUTIL_API cog_result_t cogw7_task_get_result(
+COGW7OS_API cog_result_t cogw7_task_get_result(
     cogw7_handle_t task_handle,
     atom_handle_t** outputs,
     size_t* output_count
@@ -490,22 +500,22 @@ COGUTIL_API cog_result_t cogw7_task_get_result(
  * Global AtomSpace
  *===========================================================================*/
 
-COGUTIL_API atomspace_t cogw7_get_global_atomspace(void);
-COGUTIL_API pln_engine_t cogw7_get_global_pln_engine(void);
+COGW7OS_API atomspace_t cogw7_get_global_atomspace(void);
+COGW7OS_API pln_engine_t cogw7_get_global_pln_engine(void);
 
 /*===========================================================================
  * 9P Integration
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cogw7_mount_9p(
+COGW7OS_API cog_result_t cogw7_mount_9p(
     const char* address,
     uint16_t port,
     const char* mountpoint
 );
 
-COGUTIL_API cog_result_t cogw7_unmount_9p(const char* mountpoint);
+COGW7OS_API cog_result_t cogw7_unmount_9p(const char* mountpoint);
 
-COGUTIL_API cog_result_t cogw7_export_atomspace_9p(
+COGW7OS_API cog_result_t cogw7_export_atomspace_9p(
     atomspace_t atomspace,
     const char* export_name
 );
@@ -514,13 +524,13 @@ COGUTIL_API cog_result_t cogw7_export_atomspace_9p(
  * Dis VM Integration
  *===========================================================================*/
 
-COGUTIL_API dis_vm_t* cogw7_get_dis_vm(void);
+COGW7OS_API dis_vm_t* cogw7_get_dis_vm(void);
 
-COGUTIL_API cog_result_t cogw7_load_limbo_module(
+COGW7OS_API cog_result_t cogw7_load_limbo_module(
     const char* module_path
 );
 
-COGUTIL_API cog_result_t cogw7_run_limbo_function(
+COGW7OS_API cog_result_t cogw7_run_limbo_function(
     const char* module_name,
     const char* function_name,
     dis_value_t* args,
@@ -532,38 +542,38 @@ COGUTIL_API cog_result_t cogw7_run_limbo_function(
  * Inter-Process Communication
  *===========================================================================*/
 
-COGUTIL_API cog_result_t cogw7_channel_create(
+COGW7OS_API cog_result_t cogw7_channel_create(
     dis_type_t elem_type,
     size_t buffer_size,
     cogw7_handle_t* channel_handle
 );
 
-COGUTIL_API cog_result_t cogw7_channel_send(
+COGW7OS_API cog_result_t cogw7_channel_send(
     cogw7_handle_t channel_handle,
     dis_value_t* value
 );
 
-COGUTIL_API cog_result_t cogw7_channel_receive(
+COGW7OS_API cog_result_t cogw7_channel_receive(
     cogw7_handle_t channel_handle,
     dis_value_t* value,
     uint32_t timeout_ms
 );
 
-COGUTIL_API cog_result_t cogw7_channel_close(cogw7_handle_t channel_handle);
+COGW7OS_API cog_result_t cogw7_channel_close(cogw7_handle_t channel_handle);
 
 /*===========================================================================
  * Cognitive Scheduling
  *===========================================================================*/
 
 /* Attention-based scheduling */
-COGUTIL_API cog_result_t cogw7_scheduler_set_attention_weight(double weight);
-COGUTIL_API cog_result_t cogw7_scheduler_boost_by_attention(
+COGW7OS_API cog_result_t cogw7_scheduler_set_attention_weight(double weight);
+COGW7OS_API cog_result_t cogw7_scheduler_boost_by_attention(
     cogw7_handle_t thread_handle,
     attention_value_t av
 );
 
 /* Goal-directed scheduling */
-COGUTIL_API cog_result_t cogw7_scheduler_set_goal_priority(
+COGW7OS_API cog_result_t cogw7_scheduler_set_goal_priority(
     atom_handle_t goal,
     int16_t priority
 );
@@ -595,7 +605,7 @@ typedef struct cogw7_kernel_stats {
     uint64_t context_switches;
 } cogw7_kernel_stats_t;
 
-COGUTIL_API void cogw7_get_kernel_stats(cogw7_kernel_stats_t* stats);
+COGW7OS_API void cogw7_get_kernel_stats(cogw7_kernel_stats_t* stats);
 
 /*===========================================================================
  * Debugging and Tracing
@@ -608,14 +618,14 @@ typedef void (*cogw7_trace_callback_t)(
     void* user_data
 );
 
-COGUTIL_API void cogw7_set_trace_callback(
+COGW7OS_API void cogw7_set_trace_callback(
     cogw7_trace_callback_t callback,
     void* user_data
 );
 
-COGUTIL_API void cogw7_dump_process(cogw7_handle_t process_handle);
-COGUTIL_API void cogw7_dump_agent(cogw7_handle_t agent_handle);
-COGUTIL_API void cogw7_dump_atomspace(atomspace_t atomspace);
+COGW7OS_API void cogw7_dump_process(cogw7_handle_t process_handle);
+COGW7OS_API void cogw7_dump_agent(cogw7_handle_t agent_handle);
+COGW7OS_API void cogw7_dump_atomspace(atomspace_t atomspace);
 
 #ifdef __cplusplus
 }
