@@ -280,7 +280,10 @@ set(ATENSPACE_HEADERS
 )
 
 add_library(atenspace ${ATENSPACE_SOURCES})
-target_link_libraries(atenspace PUBLIC Threads::Threads m)
+target_link_libraries(atenspace PUBLIC Threads::Threads)
+if(NOT WIN32)
+    target_link_libraries(atenspace PRIVATE m)
+endif()
 
 if(TARGET cogutil)
     target_link_libraries(atenspace PUBLIC cogutil)
