@@ -144,6 +144,7 @@ COGUTIL_API bool cog_cond_timedwait(cog_cond_t cond, cog_mutex_t mutex, uint32_t
 #if defined(CLOCK_REALTIME)
     clock_gettime(CLOCK_REALTIME, &ts);
 #elif defined(_WIN32)
+    /* timespec_get (C11) is available in MSVC 2015+ (Visual Studio 14.0) */
     timespec_get(&ts, TIME_UTC);
 #else
     ts.tv_sec = time(NULL);
