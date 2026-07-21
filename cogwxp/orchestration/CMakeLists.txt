@@ -353,6 +353,10 @@ if(ENABLE_TOOLCHAINS)
     target_compile_definitions(orchestration PRIVATE ENABLE_TOOLCHAINS=1)
 endif()
 
+if(WIN32)
+    set_target_properties(orchestration PROPERTIES WINDOWS_EXPORT_ALL_SYMBOLS ON)
+endif()
+
 set_target_properties(orchestration PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1

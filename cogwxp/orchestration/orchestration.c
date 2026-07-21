@@ -2,5 +2,5 @@
 #include <stddef.h>
 #include "orchestration.h"
 
-/* Stub implementation of orchestration.c */
-static int _stub_placeholder = 0;
+/* Export a stub symbol so Windows shared-library builds emit an import library. */
+void orchestration_stub_anchor(void) {}
