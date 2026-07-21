@@ -23,7 +23,6 @@ find_package(Threads REQUIRED)
 find_library(COGUTIL_LIB cogutil HINTS ${CMAKE_INSTALL_PREFIX}/lib)
 find_library(ATOMSPACE_LIB atomspace HINTS ${CMAKE_INSTALL_PREFIX}/lib)
 find_library(PLN_LIB pln HINTS ${CMAKE_INSTALL_PREFIX}/lib)
-find_library(COGSERVER_LIB cogserver HINTS ${CMAKE_INSTALL_PREFIX}/lib)
 
 if(ENABLE_9P_INTEGRATION)
     find_library(P9_LIB p9 HINTS ${CMAKE_INSTALL_PREFIX}/lib)
@@ -85,10 +84,6 @@ endif()
 
 if(TARGET pln)
     target_link_libraries(cogw7os PUBLIC pln)
-endif()
-
-if(TARGET cogserver)
-    target_link_libraries(cogw7os PUBLIC cogserver)
 endif()
 
 if(ENABLE_9P_INTEGRATION AND TARGET p9)
