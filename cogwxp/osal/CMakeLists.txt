@@ -29,7 +29,7 @@ endif()
 
 # Platform-specific link libraries
 if(WIN32)
-    target_link_libraries(osal PRIVATE advapi32)
+    target_link_libraries(osal PRIVATE advapi32 ws2_32)
 else()
     target_link_libraries(osal PRIVATE pthread dl)
 endif()
