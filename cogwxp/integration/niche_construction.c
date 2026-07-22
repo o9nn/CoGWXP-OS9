@@ -6,6 +6,9 @@
  */
 
 #include "niche_construction.h"
+#if defined(_WIN32) && defined(_MSC_VER)
+#define _CRT_RAND_S
+#endif
 #include <stdlib.h>
 #include <string.h>
 #include <stdio.h>
