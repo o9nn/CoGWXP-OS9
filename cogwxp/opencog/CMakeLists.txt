@@ -72,6 +72,11 @@ set(COGUTIL_HEADERS
 add_library(cogutil ${COGUTIL_SOURCES})
 target_link_libraries(cogutil PRIVATE Threads::Threads)
 
+# Link to shared compile options for consistent warnings
+if(TARGET cogwxp_compile_options)
+    target_link_libraries(cogutil PRIVATE cogwxp_compile_options)
+endif()
+
 if(UUID_FOUND)
     target_include_directories(cogutil PRIVATE ${UUID_INCLUDE_DIRS})
     target_link_libraries(cogutil PRIVATE ${UUID_LIBRARIES})
@@ -119,6 +124,11 @@ set(ATOMSPACE_HEADERS
 add_library(atomspace ${ATOMSPACE_SOURCES})
 target_link_libraries(atomspace PUBLIC cogutil)
 
+# Link to shared compile options for consistent warnings
+if(TARGET cogwxp_compile_options)
+    target_link_libraries(atomspace PRIVATE cogwxp_compile_options)
+endif()
+
 if(ENABLE_9P_INTEGRATION)
     target_link_libraries(atomspace PRIVATE p9)
     target_compile_definitions(atomspace PRIVATE ENABLE_9P_INTEGRATION=1)
@@ -164,6 +174,11 @@ if(NOT WIN32)
     target_link_libraries(pln PRIVATE m)
 endif()
 
+# Link to shared compile options for consistent warnings
+if(TARGET cogwxp_compile_options)
+    target_link_libraries(pln PRIVATE cogwxp_compile_options)
+endif()
+
 if(ENABLE_9P_INTEGRATION)
     target_compile_definitions(pln PRIVATE ENABLE_9P_INTEGRATION=1)
 endif()
@@ -200,6 +215,11 @@ set(COGSERVER_HEADERS
 
 add_library(cogserver ${COGSERVER_SOURCES})
 target_link_libraries(cogserver PUBLIC pln)
+
+# Link to shared compile options for consistent warnings
+if(TARGET cogwxp_compile_options)
+    target_link_libraries(cogserver PRIVATE cogwxp_compile_options)
+endif()
 
 if(WIN32)
     target_compile_definitions(cogserver PRIVATE COGSERVER_EXPORTS)

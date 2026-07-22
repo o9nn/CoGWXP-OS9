@@ -49,6 +49,11 @@ if(TARGET cogutil)
     target_link_libraries(p9 PUBLIC cogutil)
 endif()
 
+# Link to shared compile options for consistent warnings
+if(TARGET cogwxp_compile_options)
+    target_link_libraries(p9 PRIVATE cogwxp_compile_options)
+endif()
+
 if(ENABLE_SSL)
     target_link_libraries(p9 PRIVATE OpenSSL::SSL OpenSSL::Crypto)
     target_compile_definitions(p9 PRIVATE ENABLE_SSL=1)

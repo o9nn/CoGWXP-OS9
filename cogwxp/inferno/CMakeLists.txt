@@ -49,6 +49,11 @@ set(DIS_HEADERS
 add_library(dis ${DIS_SOURCES})
 target_link_libraries(dis PRIVATE Threads::Threads)
 
+# Link to shared compile options for consistent warnings
+if(TARGET cogwxp_compile_options)
+    target_link_libraries(dis PRIVATE cogwxp_compile_options)
+endif()
+
 if(ENABLE_JIT)
     target_compile_definitions(dis PRIVATE ENABLE_JIT=1)
 endif()
@@ -73,6 +78,11 @@ set(LIMBO_RT_SOURCES
 
 add_library(limbo_rt ${LIMBO_RT_SOURCES})
 target_link_libraries(limbo_rt PUBLIC dis)
+
+# Link to shared compile options for consistent warnings
+if(TARGET cogwxp_compile_options)
+    target_link_libraries(limbo_rt PRIVATE cogwxp_compile_options)
+endif()
 
 # ===========================================================================
 # Dis Interpreter (emu)

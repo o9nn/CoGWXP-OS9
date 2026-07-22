@@ -74,6 +74,11 @@ set(COGW7OS_HEADERS
 add_library(cogw7os ${COGW7OS_SOURCES})
 target_link_libraries(cogw7os PUBLIC Threads::Threads)
 
+# Link to shared compile options for consistent warnings
+if(TARGET cogwxp_compile_options)
+    target_link_libraries(cogw7os PRIVATE cogwxp_compile_options)
+endif()
+
 if(TARGET cogutil)
     target_link_libraries(cogw7os PUBLIC cogutil)
 endif()

@@ -73,6 +73,11 @@ if(ENABLE_MSGRAPH)
     add_library(msgraph ${MSGRAPH_SOURCES})
     target_link_libraries(msgraph PUBLIC Threads::Threads)
     
+    # Link to shared compile options for consistent warnings
+    if(TARGET cogwxp_compile_options)
+        target_link_libraries(msgraph PRIVATE cogwxp_compile_options)
+    endif()
+    
     if(CURL_FOUND)
         target_link_libraries(msgraph PUBLIC CURL::libcurl)
     endif()
@@ -114,6 +119,11 @@ if(ENABLE_COGPILOT)
     
     add_library(cogpilot ${COGPILOT_SOURCES})
     target_link_libraries(cogpilot PUBLIC Threads::Threads)
+    
+    # Link to shared compile options for consistent warnings
+    if(TARGET cogwxp_compile_options)
+        target_link_libraries(cogpilot PRIVATE cogwxp_compile_options)
+    endif()
     
     if(CURL_FOUND)
         target_link_libraries(cogpilot PUBLIC CURL::libcurl)
@@ -163,6 +173,11 @@ if(ENABLE_OSDEPLOY)
     add_library(osdeploy ${OSDEPLOY_SOURCES})
     target_link_libraries(osdeploy PUBLIC Threads::Threads)
     
+    # Link to shared compile options for consistent warnings
+    if(TARGET cogwxp_compile_options)
+        target_link_libraries(osdeploy PRIVATE cogwxp_compile_options)
+    endif()
+    
     if(TARGET cogutil)
         target_link_libraries(osdeploy PUBLIC cogutil)
     endif()
@@ -204,6 +219,11 @@ if(ENABLE_AZURITE)
     add_library(azurite ${AZURITE_SOURCES})
     target_link_libraries(azurite PUBLIC Threads::Threads)
     
+    # Link to shared compile options for consistent warnings
+    if(TARGET cogwxp_compile_options)
+        target_link_libraries(azurite PRIVATE cogwxp_compile_options)
+    endif()
+    
     if(TARGET cogutil)
         target_link_libraries(azurite PUBLIC cogutil)
     endif()
@@ -244,6 +264,11 @@ if(ENABLE_TOOLCHAINS)
     add_library(toolchains ${TOOLCHAINS_SOURCES})
     target_link_libraries(toolchains PUBLIC Threads::Threads)
     
+    # Link to shared compile options for consistent warnings
+    if(TARGET cogwxp_compile_options)
+        target_link_libraries(toolchains PRIVATE cogwxp_compile_options)
+    endif()
+    
     if(TARGET cogutil)
         target_link_libraries(toolchains PUBLIC cogutil)
     endif()
@@ -283,6 +308,11 @@ add_library(atenspace ${ATENSPACE_SOURCES})
 target_link_libraries(atenspace PUBLIC Threads::Threads)
 if(NOT WIN32)
     target_link_libraries(atenspace PRIVATE m)
+endif()
+
+# Link to shared compile options for consistent warnings
+if(TARGET cogwxp_compile_options)
+    target_link_libraries(atenspace PRIVATE cogwxp_compile_options)
 endif()
 
 if(TARGET cogutil)
@@ -327,6 +357,11 @@ set(ORCHESTRATION_HEADERS
 
 add_library(orchestration ${ORCHESTRATION_SOURCES})
 target_link_libraries(orchestration PUBLIC Threads::Threads)
+
+# Link to shared compile options for consistent warnings
+if(TARGET cogwxp_compile_options)
+    target_link_libraries(orchestration PRIVATE cogwxp_compile_options)
+endif()
 
 if(ENABLE_MSGRAPH)
     target_link_libraries(orchestration PUBLIC msgraph)

@@ -61,6 +61,43 @@ elseif(ENABLE_ASAN OR ENABLE_UBSAN)
 endif()
 
 # ===========================================================================
+# Warnings-as-Errors Ratchet
+# ===========================================================================
+# Shared compile options interface target that all CoGWXP-OS9 targets link to.
+# This ensures consistent warning flags and prevents API drift.
+
+option(ENABLE_WERROR "Treat all warnings as errors (recommended for CI)" OFF)
+
+add_library(cogwxp_compile_options INTERFACE)
+
+if(CMAKE_C_COMPILER_ID MATCHES "GNU|Clang")
+    target_compile_options(cogwxp_compile_options INTERFACE
+        -Wall
+        -Wextra
+        -Werror=implicit-function-declaration
+        -Werror=incompatible-pointer-types
+        -Werror=return-type
+        -Wno-unused-parameter
+        -Wno-unused-variable
+    )
+    if(ENABLE_WERROR)
+        target_compile_options(cogwxp_compile_options INTERFACE -Werror)
+    endif()
+elseif(CMAKE_C_COMPILER_ID STREQUAL "MSVC")
+    target_compile_options(cogwxp_compile_options INTERFACE
+        /W4
+        /we4013  # function undefined; assuming extern returning int (implicit-function-declaration)
+        /we4133  # incompatible types
+        /we4716  # function must return a value
+        /wd4100  # unreferenced formal parameter
+        /wd4189  # local variable is initialized but not referenced
+    )
+    if(ENABLE_WERROR)
+        target_compile_options(cogwxp_compile_options INTERFACE /WX)
+    endif()
+endif()
+
+# ===========================================================================
 # Output Directories
 # ===========================================================================
 
@@ -89,6 +126,10 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 # ===========================================================================
 # Build Order (respecting dependencies)
 # ===========================================================================
+
+# 0. OSAL - Operating System Abstraction Layer (no dependencies)
+message(STATUS "Configuring OSAL (OS Abstraction Layer)...")
+add_subdirectory(osal)
 
 # 1. OpenCog Components (cogutil -> atomspace -> pln -> cogserver)
 message(STATUS "Configuring OpenCog components...")
@@ -240,6 +281,7 @@ message(STATUS "    SSL/TLS:          ${ENABLE_SSL}")
 message(STATUS "    JIT Compilation:  ${ENABLE_JIT}")
 message(STATUS "    AddressSanitizer: ${ENABLE_ASAN}")
 message(STATUS "    UBSanitizer:      ${ENABLE_UBSAN}")
+message(STATUS "    Warnings-as-Err:  ${ENABLE_WERROR}")
 message(STATUS "")
 message(STATUS "  Orchestration:")
 message(STATUS "    MS Graph:         ${ENABLE_MSGRAPH}")
