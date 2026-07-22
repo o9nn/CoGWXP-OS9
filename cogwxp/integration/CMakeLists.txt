@@ -68,6 +68,11 @@ set(BRIDGE_HEADERS
 add_library(unified_bridge ${BRIDGE_SOURCES})
 target_link_libraries(unified_bridge PUBLIC Threads::Threads)
 
+# Link to shared compile options for consistent warnings
+if(TARGET cogwxp_compile_options)
+    target_link_libraries(unified_bridge PRIVATE cogwxp_compile_options)
+endif()
+
 # Link all available libraries
 foreach(LIB cogutil atomspace pln cogserver cogw7os)
     if(TARGET ${LIB})
@@ -128,6 +133,11 @@ set(COGWXP_OS_HEADERS
 
 add_library(cogwxp_os ${COGWXP_OS_SOURCES})
 target_link_libraries(cogwxp_os PUBLIC unified_bridge)
+
+# Link to shared compile options for consistent warnings
+if(TARGET cogwxp_compile_options)
+    target_link_libraries(cogwxp_os PRIVATE cogwxp_compile_options)
+endif()
 
 if(WIN32)
     target_compile_definitions(cogwxp_os PRIVATE COGWXPOS_EXPORTS)

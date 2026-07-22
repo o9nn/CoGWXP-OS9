@@ -87,6 +87,7 @@ jobs:
             cmake \
             ninja-build \
             build-essential \
+            ccache \
             libboost-dev \
             libboost-system-dev \
             libboost-filesystem-dev \
@@ -102,7 +103,27 @@ jobs:
         if: runner.os == 'macOS'
         run: |
           brew update --quiet
-          brew install cmake ninja boost openssl curl lcov || true
+          brew install cmake ninja ccache boost openssl curl lcov || true
+
+      # -----------------------------------------------------------------------
+      # ccache configuration and caching
+      # -----------------------------------------------------------------------
+      - name: Configure ccache (non-Windows)
+        if: runner.os != 'Windows'
+        run: |
+          ccache --set-config=max_size=500M
+          ccache --set-config=hash_dir=false
+          ccache --zero-stats
+
+      - name: Cache ccache (non-Windows)
+        if: runner.os != 'Windows'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ccache
+          key: ccache-${{ matrix.os }}-${{ matrix.build_type }}-${{ github.sha }}
+          restore-keys: |
+            ccache-${{ matrix.os }}-${{ matrix.build_type }}-
+            ccache-${{ matrix.os }}-
 
       - name: Set up MSVC developer environment (Windows)
         if: runner.os == 'Windows'
@@ -122,6 +143,8 @@ jobs:
           cmake -B build -S cogwxp \
             -GNinja \
             -DCMAKE_BUILD_TYPE=${{ matrix.build_type }} \
+            -DCMAKE_C_COMPILER_LAUNCHER=ccache \
+            -DCMAKE_CXX_COMPILER_LAUNCHER=ccache \
             -DBUILD_TESTS=ON \
             -DBUILD_SHARED_LIBS=ON \
             -DENABLE_9P_INTEGRATION=ON \
@@ -154,6 +177,10 @@ jobs:
       # -----------------------------------------------------------------------
       - name: Build
         run: cmake --build build --parallel
+
+      - name: Show ccache stats (non-Windows)
+        if: runner.os != 'Windows'
+        run: ccache --show-stats
 
       # -----------------------------------------------------------------------
       # Unit tests
@@ -360,6 +387,72 @@ jobs:
           retention-days: 30
 
   # ---------------------------------------------------------------------------
+  # Interface compilation check: compile each public header standalone
+  # to detect header rot and missing includes early
+  # ---------------------------------------------------------------------------
+  header-check:
+    name: Header Compilation Check
+    runs-on: ubuntu-22.04
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install dependencies
+        run: |
+          sudo apt-get update -qq
+          sudo apt-get install -y --no-install-recommends \
+            cmake ninja-build build-essential \
+            libboost-dev libboost-system-dev libboost-filesystem-dev
+
+      - name: Configure (generate compile_commands.json)
+        run: |
+          cmake -B build -S cogwxp \
+            -GNinja \
+            -DCMAKE_BUILD_TYPE=Debug \
+            -DBUILD_TESTS=OFF \
+            -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
+      - name: Check headers compile standalone
+        shell: bash
+        run: |
+          set -e
+          failed=0
+          echo "Checking public headers can be compiled standalone..."
+          
+          # Find all public header files in main modules
+          headers=$(find cogwxp/opencog cogwxp/plan9 cogwxp/inferno cogwxp/cogw7os cogwxp/integration \
+                    -name "*.h" -type f ! -path "*/tests/*" | head -50)
+          
+          for header in $headers; do
+            echo "Checking: $header"
+            # Create a test file that just includes the header
+            echo "#include \"$header\"" > /tmp/header_test.c
+            echo "int main(void) { return 0; }" >> /tmp/header_test.c
+            
+            # Compile with the same include paths as the main build
+            if ! gcc -std=c11 -fsyntax-only \
+                -I cogwxp \
+                -I cogwxp/opencog \
+                -I cogwxp/plan9 \
+                -I cogwxp/inferno \
+                -I cogwxp/cogw7os \
+                -I cogwxp/integration \
+                /tmp/header_test.c 2>&1; then
+              echo "FAILED: $header"
+              failed=1
+            fi
+          done
+          
+          if [ $failed -eq 1 ]; then
+            echo "Some headers failed to compile standalone"
+            exit 1
+          fi
+          echo "All headers compile standalone successfully!"
+
+  # ---------------------------------------------------------------------------
   # Single required status check: succeeds only when every dependency succeeds
   # (experimental Windows variants report success via continue-on-error).
   # Use this job as the sole required check in branch protection.
@@ -373,6 +466,7 @@ jobs:
       - coverage
       - static-analysis
       - memcheck
+      - header-check
     permissions: {}
     steps:
       - name: Check all job results
@@ -381,10 +475,12 @@ jobs:
           echo "coverage:        ${{ needs.coverage.result }}"
           echo "static-analysis: ${{ needs.static-analysis.result }}"
           echo "memcheck:        ${{ needs.memcheck.result }}"
+          echo "header-check:    ${{ needs.header-check.result }}"
           if [ "${{ needs.build-and-test.result }}" != "success" ] || \
              [ "${{ needs.coverage.result }}" != "success" ] || \
              [ "${{ needs.static-analysis.result }}" != "success" ] || \
-             [ "${{ needs.memcheck.result }}" != "success" ]; then
+             [ "${{ needs.memcheck.result }}" != "success" ] || \
+             [ "${{ needs.header-check.result }}" != "success" ]; then
             echo "One or more required jobs failed."
             exit 1
           fi
