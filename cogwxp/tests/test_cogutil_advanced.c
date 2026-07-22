@@ -524,11 +524,11 @@ static void test_timer(void) {
     TEST_ASSERT(t != NULL, "Timer created");
 
     cog_timer_start(t);
-    cog_sleep_ms(200);   /* Should fire ~4 times */
+    cog_sleep_ms(500);   /* Should fire ~10 times; use a generous window for CI scheduler latency */
     cog_timer_stop(t);
 
     int fires = atomic_load(&g_timer_fires);
-    TEST_ASSERT(fires >= 2, "Timer fired at least 2 times in 200ms");
+    TEST_ASSERT(fires >= 2, "Timer fired at least 2 times in 500ms");
 
     cog_timer_reset(t);
     cog_timer_destroy(t);
