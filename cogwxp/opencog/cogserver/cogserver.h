@@ -546,6 +546,9 @@ COGSERVER_API cog_result_t cogserver_set_event_handler(
     void* user_data
 );
 
+/** Stub anchor exported to ensure MSVC emits an import library for this DLL. */
+COGSERVER_API void cogserver_stub_anchor(void);
+
 #ifdef __cplusplus
 }
 #endif
