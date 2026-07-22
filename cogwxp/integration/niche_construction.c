@@ -10,7 +10,34 @@
 #include <string.h>
 #include <stdio.h>
 #include <time.h>
+#include <stdint.h>
 #include <pthread.h>
+
+/*===========================================================================
+ * Cross-platform RNG Helper
+ *===========================================================================*/
+
+/**
+ * @brief Thread-safe random number generator (cross-platform)
+ * 
+ * Uses rand_s on Windows (MSVC) and rand_r on POSIX systems.
+ */
+static inline unsigned int niche_rand_u32(unsigned int *state) {
+#if defined(_WIN32)
+    /* rand_s is available on MSVC and is thread-safe */
+    unsigned int v = 0;
+    if (rand_s(&v) == 0) {
+        /* Update state to maintain consistent behavior with POSIX rand_r */
+        *state = v;
+        return v;
+    }
+    /* LCG fallback if rand_s fails */
+    *state = (*state * 1103515245u + 12345u);
+    return *state;
+#else
+    return rand_r(state);
+#endif
+}
 
 /*===========================================================================
  * Internal Structures
@@ -56,7 +83,7 @@ struct niche_engine {
  *===========================================================================*/
 
 static uint64_t generate_id(niche_engine_t engine) {
-    return (uint64_t)time(NULL) * 1000000 + (rand_r(&engine->rand_seed) % 1000000);
+    return (uint64_t)time(NULL) * 1000000ULL + (niche_rand_u32(&engine->rand_seed) % 1000000ULL);
 }
 
 static niche_glyph_t* create_glyph(uint64_t id, const char* name) {
@@ -231,7 +258,7 @@ COGWXPOS_API cog_result_t niche_normalize_proposals(
     /* Evaluate each proposal via critic/constraint model */
     for (size_t i = 0; i < proposal_count; i++) {
         /* Simulate evaluation score */
-        double base_score = 0.5 + ((double)rand_r(&engine->rand_seed) / RAND_MAX) * 0.5;
+        double base_score = 0.5 + ((double)niche_rand_u32(&engine->rand_seed) / (double)UINT32_MAX) * 0.5;
         scores[i] = base_score;
     }
     
