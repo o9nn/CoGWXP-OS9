@@ -127,6 +127,10 @@ include_directories(${CMAKE_CURRENT_SOURCE_DIR})
 # Build Order (respecting dependencies)
 # ===========================================================================
 
+# 0. OSAL - Operating System Abstraction Layer (no dependencies)
+message(STATUS "Configuring OSAL (OS Abstraction Layer)...")
+add_subdirectory(osal)
+
 # 1. OpenCog Components (cogutil -> atomspace -> pln -> cogserver)
 message(STATUS "Configuring OpenCog components...")
 add_subdirectory(opencog)
