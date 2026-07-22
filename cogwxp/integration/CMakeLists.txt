@@ -97,6 +97,7 @@ set_target_properties(unified_bridge PROPERTIES
     VERSION ${PROJECT_VERSION}
     SOVERSION 1
     PUBLIC_HEADER "${BRIDGE_HEADERS}"
+    WINDOWS_EXPORT_ALL_SYMBOLS ON
 )
 
 # ===========================================================================
