@@ -267,7 +267,7 @@ jobs:
             --capture \
             --directory build \
             --output-file coverage.info \
-            --ignore-errors mismatch,source \
+            --ignore-errors source \
             --rc lcov_branch_coverage=1
           lcov \
             --remove coverage.info \
