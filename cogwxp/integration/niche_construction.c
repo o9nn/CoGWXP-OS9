@@ -5,6 +5,10 @@
  * @copyright CoGWXP-OS9 Project
  */
 
+#if defined(_WIN32) && defined(_MSC_VER)
+#define _CRT_RAND_S
+#endif
+
 #include "niche_construction.h"
 #include <stdlib.h>
 #include <string.h>
