@@ -241,7 +241,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             cmake ninja-build build-essential \
             libboost-dev libboost-system-dev libboost-filesystem-dev \
-            libboost-program-options-dev lcov
+            libboost-program-options-dev libcurl4-openssl-dev lcov
 
       - name: Configure with coverage
         run: |
@@ -354,7 +354,7 @@ jobs:
           sudo apt-get install -y --no-install-recommends \
             cmake ninja-build build-essential \
             libboost-dev libboost-system-dev libboost-filesystem-dev \
-            valgrind
+            libcurl4-openssl-dev valgrind
 
       - name: Configure
         run: |
@@ -434,6 +434,7 @@ jobs:
             
             # Compile with the same include paths as the main build
             if ! gcc -std=c11 -fsyntax-only \
+                -I . \
                 -I cogwxp \
                 -I cogwxp/opencog \
                 -I cogwxp/plan9 \

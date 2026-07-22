@@ -13,6 +13,7 @@
 
 #include "../dis/dis.h"
 #include "../../opencog/atomspace/atomspace.h"
+#include "../../opencog/pln/pln.h"
 
 #ifdef __cplusplus
 extern "C" {
