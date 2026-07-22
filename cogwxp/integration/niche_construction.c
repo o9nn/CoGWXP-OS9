@@ -26,7 +26,11 @@ static inline unsigned int niche_rand_u32(unsigned int *state) {
 #if defined(_WIN32)
     /* rand_s is available on MSVC and is thread-safe */
     unsigned int v = 0;
-    if (rand_s(&v) == 0) return v;
+    if (rand_s(&v) == 0) {
+        /* Update state to maintain consistent behavior with POSIX rand_r */
+        *state = v;
+        return v;
+    }
     /* LCG fallback if rand_s fails */
     *state = (*state * 1103515245u + 12345u);
     return *state;
